@@ -173,7 +173,7 @@ extension SettingsView on _LifeKeeperState {
                 }
                 await action(() async {
                   await pin.set(value);
-                  if (mounted) setState(() => pinEnabled = true);
+                  if (mounted) refreshState(() => pinEnabled = true);
                 });
               },
             ),
@@ -189,7 +189,7 @@ extension SettingsView on _LifeKeeperState {
                   if (value != null)
                     await action(() async {
                       await pin.disable(value);
-                      if (mounted) setState(() => pinEnabled = false);
+                      if (mounted) refreshState(() => pinEnabled = false);
                     });
                 },
                 child: const Text('Disable PIN'),
@@ -238,7 +238,7 @@ extension SettingsView on _LifeKeeperState {
                     await repo.clear();
                     await pin.storage.deleteAll();
                     if (mounted)
-                      setState(() {
+                      refreshState(() {
                         pinEnabled = false;
                         locked = false;
                       });

@@ -107,6 +107,10 @@ class LifeKeeper extends StatefulWidget {
 }
 
 class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
+  void refreshState(VoidCallback change) {
+    if (mounted) setState(change);
+  }
+
   final navigator = GlobalKey<NavigatorState>();
   final pin = PinSecurity();
   List<AdminRecord> records = [];
@@ -862,7 +866,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
           ),
         ],
       ),
-      const Row(
+      Row(
         children: [
           for (final d in ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
             Expanded(child: Center(child: Text(d))),

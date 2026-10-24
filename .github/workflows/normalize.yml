@@ -1,0 +1,32 @@
+name: Normalize initial source
+on:
+  push:
+    paths: ['dev/normalize_source.py','.github/workflows/normalize.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - run: python3 dev/normalize_source.py
+      - run: flutter pub get
+      - run: dart format lib test
+      - name: Commit exact source and dependency lock, no release
+        run: |
+          git config user.name 'LifeKeeper build'
+          git config user.email 'lifekeeper-build@users.noreply.github.com'
+          git add lib test pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m 'Normalize source and lock pinned dependencies'
+            git push origin HEAD:main
+          fi

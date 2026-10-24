@@ -1,0 +1,3 @@
+-keep class io.flutter.plugins.** { *; }
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+-keep class com.ambi.lifekeeper.SystemReceiver { *; }

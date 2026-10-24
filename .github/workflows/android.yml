@@ -1,0 +1,123 @@
+name: LifeKeeper Android CI
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths: ['lib/**', 'test/**', 'integration_test/**', 'android/**', 'pubspec.yaml', 'pubspec.lock', 'analysis_options.yaml']
+  pull_request:
+    paths: ['lib/**', 'test/**', 'android/**', 'pubspec.yaml', 'pubspec.lock', 'analysis_options.yaml', '.github/workflows/android.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          # Pin to the implementation's verified mutually compatible SDK before release.
+          channel: stable
+          cache: true
+      - name: SDK evidence
+        run: flutter --version
+      - name: Resolve packages
+        run: flutter pub get
+      - name: Analyze with fatal warnings and infos
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Tests
+        run: |
+          test -d test
+          flutter test --coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.sha }}
+          path: coverage/lcov.info
+          if-no-files-found: error
+  signed-apk:
+    if: github.event_name != 'pull_request'
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Install private signing inputs
+        env:
+          SIGNING_STORE: ${{ secrets.LK_SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.LK_SIGNING_STORE_PASSWORD }}
+        run: |
+          test -n "$SIGNING_STORE" || { echo 'Missing signing keystore secret'; exit 1; }
+          test -n "$SIGNING_PASSWORD" || { echo 'Missing signing password secret'; exit 1; }
+          printf '%s' "$SIGNING_STORE" | base64 --decode > "$RUNNER_TEMP/lifekeeper.p12"
+          chmod 600 "$RUNNER_TEMP/lifekeeper.p12"
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=lifekeeper\nstoreFile=%s\nstoreType=PKCS12\n' "$SIGNING_PASSWORD" "$SIGNING_PASSWORD" "$RUNNER_TEMP/lifekeeper.p12" > android/key.properties
+          chmod 600 android/key.properties
+          keytool -exportcert -keystore "$RUNNER_TEMP/lifekeeper.p12" -storetype PKCS12 -storepass:env SIGNING_PASSWORD -alias lifekeeper -file "$RUNNER_TEMP/signer.der"
+          sha256sum "$RUNNER_TEMP/signer.der" | cut -d' ' -f1 > "$RUNNER_TEMP/expected-signer.txt"
+      - name: Build release ARM64 APK
+        run: flutter build apk --release --target-platform android-arm64 --split-debug-info=build/symbols
+      - name: Verify exact release signature and write evidence
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > "$RUNNER_TEMP/apk-signature.txt"
+          ACTUAL="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(cat "$RUNNER_TEMP/expected-signer.txt")"
+          test "$ACTUAL" = "$EXPECTED" || { echo 'APK does not use the expected private release signing key'; exit 1; }
+          mkdir -p release-output
+          cp "$APK" release-output/LifeKeeper-arm64.apk
+          cp "$RUNNER_TEMP/apk-signature.txt" release-output/signature-verification.txt
+          sha256sum release-output/LifeKeeper-arm64.apk > release-output/SHA256SUMS.txt
+          BYTES="$(stat -c%s release-output/LifeKeeper-arm64.apk)"
+          printf 'Commit: %s\nAPK bytes: %s\nSigner SHA256: %s\nCI analyze and tests passed before this signed build\nNothing is phone-tested\n' "$GITHUB_SHA" "$BYTES" "$ACTUAL" > release-output/build-evidence.txt
+          cat release-output/build-evidence.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-apk-${{ github.sha }}
+          path: release-output/*
+          if-no-files-found: error
+      - name: Remove private signing files
+        if: always()
+        run: rm -f android/key.properties "$RUNNER_TEMP/lifekeeper.p12" "$RUNNER_TEMP/signer.der"
+  release:
+    needs: [checks, signed-apk]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.checks.result == 'success' && needs.signed-apk.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-apk-${{ github.sha }}
+          path: release-output
+      - name: Publish only the exact green-check signed APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          printf 'Automated analyze, tests, ARM64 signed APK build and exact signer verification passed for commit %s.\n\nNothing is phone-tested. Camera/OCR, UPI, notification delivery/actions, reboot/OEM restrictions, airplane-mode operation, lock and restore still need phone testing. See docs/BUILD_SCOPE.md and build-evidence.txt.\n' "$GITHUB_SHA" > "$RUNNER_TEMP/release-notes.txt"
+          gh release create "$RELEASE_TAG" release-output/* --verify-tag --title "LifeKeeper $RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.txt"

@@ -46,6 +46,21 @@ extension SettingsView on _LifeKeeperState {
             toggle('Daily digest', 'digest'),
             time('Reminder time', 'reminderTime', 540),
             time('Digest time', 'digestTime', 540),
+            ListTile(
+              title: const Text('Snooze duration'),
+              subtitle: Text('${settings['snoozeMinutes'] ?? 60} minutes'),
+              onTap: () async {
+                final input = await prompt(
+                  context,
+                  'Snooze duration',
+                  'Minutes (1 to 10080)',
+                  initial: '${settings['snoozeMinutes'] ?? 60}',
+                );
+                final n = int.tryParse(input ?? '');
+                if (n != null && n > 0 && n <= 10080)
+                  await action(() => repo.setting('snoozeMinutes', n));
+              },
+            ),
             time('Quiet hours start', 'quietStart', 1320),
             time('Quiet hours end', 'quietEnd', 480),
             toggle('Sound', 'sound'),

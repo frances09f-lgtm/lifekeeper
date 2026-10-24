@@ -1,14 +1,161 @@
 part of '../main.dart';
-extension SpendingView on _LifeKeeperState{
- List<Widget> spending(BuildContext context){
-  final currencies=payments.map((p)=>p['currency'] as String).toSet()..add('INR');final chosen=settings['spendingCurrency'] as String? ?? 'INR';final currency=currencies.contains(chosen)?chosen:'INR';
-  final actual=realPayments(payments,currency,demoIds:records.where((r)=>r.flag('demo')).map((r)=>r.id!).toSet());
-  final now=DateTime.now();
-  List<Map<String,Object?>> forMonth(DateTime date)=>actual.where((p){final at=DateTime.parse(p['paidAt'] as String).toLocal();return at.year==date.year&&at.month==date.month;}).toList();
-  final current=forMonth(now);final paid=paymentTotal(current);
-  final budgets=Map<String,dynamic>.from(settings['budgets'] as Map? ?? {});final budget=(budgets[currency] as num?)?.toInt()??0;
-  final bars=[for(var i=5;i>=0;i--)paymentTotal(forMonth(DateTime(now.year,now.month-i)))];final maximum=max(1,bars.reduce(max));
-  final categories=current.map((p)=>p['category'] as String).toSet();
-  return [const Text('Your spending',style:TextStyle(fontSize:30,fontWeight:FontWeight.w800)),const Text('Only locally marked paid records are counted. Due items, demos and document completions are not spending.'),dropdown(currency,currencies.toList()..sort(),(v)=>action(()=>repo.setting('spendingCurrency',v))),card(Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Paid this month: ${money(paid,currency)}',style:const TextStyle(fontSize:25,fontWeight:FontWeight.bold)),Text('Budget: ${budget==0?'not set':money(budget,currency)}'),if(budget>0)...[Text('Remaining: ${money(budget-paid,currency)}'),const SizedBox(height:12),LinearProgressIndicator(value:(paid/budget).clamp(0.0,1.0))],TextButton(onPressed:()async{final input=await prompt(context,'Monthly $currency budget','Amount',initial:budget==0?'':(budget/currencyScale(currency)).toString());if(input!=null){final value=minorAmount(input,currency:currency);if(value==null){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Invalid budget amount')));return;}budgets[currency]=value;await action(()=>repo.setting('budgets',budgets));}},child:const Text('Set monthly budget'))])),title('Last six months'),card(SizedBox(height:180,child:Row(crossAxisAlignment:CrossAxisAlignment.end,children:[for(var i=0;i<6;i++)Expanded(child:Padding(padding:const EdgeInsets.symmetric(horizontal:4),child:Column(mainAxisAlignment:MainAxisAlignment.end,children:[Text((bars[i]/currencyScale(currency)).toStringAsFixed(0),style:const TextStyle(fontSize:10)),const SizedBox(height:4),Container(height:max(2.0,120.0*bars[i]/maximum),decoration:BoxDecoration(color:Theme.of(context).colorScheme.primary,borderRadius:BorderRadius.circular(8))),const SizedBox(height:8),Text('${DateTime(now.year,now.month-5+i).month}/${DateTime(now.year,now.month-5+i).year%100}',style:const TextStyle(fontSize:11))])))]))),title('Category breakdown'),card(Column(children:[if(categories.isEmpty)const Text('No paid items this month'),for(final category in categories)ListTile(title:Text(category),trailing:Text(money(paymentTotal(current.where((p)=>p['category']==category).toList()),currency)))])),title('Payment history'),if(actual.isEmpty)card(const Text('No payments marked paid yet')),for(final p in actual)card(ListTile(title:Text(p['title'] as String),subtitle:Text('${p['paidAt']} · occurrence ${p['occurrence']}'),trailing:Text(money((p['amount'] as num).toInt(),currency))))];
- }
+
+extension SpendingView on _LifeKeeperState {
+  List<Widget> spending(BuildContext context) {
+    final currencies = payments.map((p) => p['currency'] as String).toSet()
+      ..add('INR');
+    final chosen = settings['spendingCurrency'] as String? ?? 'INR';
+    final currency = currencies.contains(chosen) ? chosen : 'INR';
+    final actual = realPayments(
+      payments,
+      currency,
+      demoIds: records.where((r) => r.flag('demo')).map((r) => r.id!).toSet(),
+    );
+    final now = DateTime.now();
+    List<Map<String, Object?>> forMonth(DateTime date) => actual.where((p) {
+      final at = DateTime.parse(p['paidAt'] as String).toLocal();
+      return at.year == date.year && at.month == date.month;
+    }).toList();
+    final current = forMonth(now);
+    final paid = paymentTotal(current);
+    final budgets = Map<String, dynamic>.from(
+      settings['budgets'] as Map? ?? {},
+    );
+    final budget = (budgets[currency] as num?)?.toInt() ?? 0;
+    final bars = [
+      for (var i = 5; i >= 0; i--)
+        paymentTotal(forMonth(DateTime(now.year, now.month - i))),
+    ];
+    final maximum = max(1, bars.reduce(max));
+    final categories = current.map((p) => p['category'] as String).toSet();
+    return [
+      const Text(
+        'Your spending',
+        style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+      ),
+      const Text(
+        'Only locally marked paid records are counted. Due items, demos and document completions are not spending.',
+      ),
+      dropdown(
+        currency,
+        currencies.toList()..sort(),
+        (v) => action(() => repo.setting('spendingCurrency', v)),
+      ),
+      card(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Paid this month: ${money(paid, currency)}',
+              style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'Budget: ${budget == 0 ? 'not set' : money(budget, currency)}',
+            ),
+            if (budget > 0) ...[
+              Text('Remaining: ${money(budget - paid, currency)}'),
+              const SizedBox(height: 12),
+              LinearProgressIndicator(value: (paid / budget).clamp(0.0, 1.0)),
+            ],
+            TextButton(
+              onPressed: () async {
+                final input = await prompt(
+                  context,
+                  'Monthly $currency budget',
+                  'Amount',
+                  initial: budget == 0
+                      ? ''
+                      : (budget / currencyScale(currency)).toString(),
+                );
+                if (input != null) {
+                  final value = minorAmount(input, currency: currency);
+                  if (value == null) {
+                    if (context.mounted)
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Invalid budget amount')),
+                      );
+                    return;
+                  }
+                  budgets[currency] = value;
+                  await action(() => repo.setting('budgets', budgets));
+                }
+              },
+              child: const Text('Set monthly budget'),
+            ),
+          ],
+        ),
+      ),
+      title('Last six months'),
+      card(
+        SizedBox(
+          height: 180,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (var i = 0; i < 6; i++)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          (bars[i] / currencyScale(currency)).toStringAsFixed(
+                            0,
+                          ),
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          height: max(2.0, 120.0 * bars[i] / maximum),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${DateTime(now.year, now.month - 5 + i).month}/${DateTime(now.year, now.month - 5 + i).year % 100}',
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      title('Category breakdown'),
+      card(
+        Column(
+          children: [
+            if (categories.isEmpty) const Text('No paid items this month'),
+            for (final category in categories)
+              ListTile(
+                title: Text(category),
+                trailing: Text(
+                  money(
+                    paymentTotal(
+                      current.where((p) => p['category'] == category).toList(),
+                    ),
+                    currency,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+      title('Payment history'),
+      if (actual.isEmpty) card(const Text('No payments marked paid yet')),
+      for (final p in actual)
+        card(
+          ListTile(
+            title: Text(p['title'] as String),
+            subtitle: Text('${p['paidAt']} · occurrence ${p['occurrence']}'),
+            trailing: Text(money((p['amount'] as num).toInt(), currency)),
+          ),
+        ),
+    ];
+  }
 }

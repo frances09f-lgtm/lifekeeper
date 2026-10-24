@@ -33,7 +33,13 @@ Future<void> applyNotificationAction(
   if (id == null) return;
   if (response.actionId == 'complete') await repo.complete(id);
   if (response.actionId == 'snooze')
-    await repo.snooze(id, const Duration(hours: 1));
+    await repo.snooze(
+      id,
+      Duration(
+        minutes:
+            ((await repo.settings())['snoozeMinutes'] as num?)?.toInt() ?? 60,
+      ),
+    );
 }
 
 Future<void> reconcileAfterSystemChange() async {
@@ -102,7 +108,7 @@ class NotificationService {
           enableVibration: settings['vibration'] != false,
           actions: const [
             AndroidNotificationAction('complete', 'Complete'),
-            AndroidNotificationAction('snooze', 'Snooze 1h'),
+            AndroidNotificationAction('snooze', 'Snooze'),
             AndroidNotificationAction('open', 'Open', showsUserInterface: true),
           ],
         ),

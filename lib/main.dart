@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'data/repository.dart';
 import 'domain/record.dart';
+import 'domain/spending.dart';
 import 'domain/bill_rules.dart';
 import 'security/security.dart';
 import 'services/notifications.dart';

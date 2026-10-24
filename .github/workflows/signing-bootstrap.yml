@@ -19,12 +19,9 @@ jobs:
       - name: Install signing dependencies
         run: python -m pip install 'cryptography==43.0.3' 'PyNaCl==1.5.0'
       - name: Generate signing identity and encrypt for repository secrets
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
         run: |
           python - <<'PY'
-          import base64, datetime, hashlib, json, os, secrets, subprocess
+          import base64, datetime, json, secrets
           from cryptography import x509
           from cryptography.x509.oid import NameOID
           from cryptography.hazmat.primitives import hashes, serialization
@@ -32,7 +29,9 @@ jobs:
           from cryptography.hazmat.primitives.serialization import pkcs12
           from nacl.public import PublicKey, SealedBox
           from nacl.encoding import Base64Encoder
-          public_key = json.loads(subprocess.check_output(['gh', 'api', 'repos/' + os.environ['GH_REPO'] + '/actions/secrets/public-key']))
+          # Public encryption key, read directly from this repository's secrets API.
+          # This value cannot decrypt secrets and is safe in public source.
+          public_key = {'key':'zKIj2wiOHBgcVpy8t0ilAeYy2054GH4sqF42AnSnklk=', 'key_id':'3380204578043523366'}
           box = SealedBox(PublicKey(public_key['key'].encode(), Base64Encoder))
           key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
           name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'LifeKeeper')])
@@ -53,6 +52,6 @@ jobs:
                     'certificate_sha256':cert.fingerprint(hashes.SHA256()).hex(),
                     'secrets': {'LK_SIGNING_KEYSTORE_BASE64':seal(base64.b64encode(store).decode()),
                                 'LK_SIGNING_STORE_PASSWORD':seal(password)}}
-          # These are sealed-box ciphertexts, not usable signing secrets. Plain material is never logged or uploaded.
+          # Only sealed-box ciphertexts are logged. Plain material is never uploaded.
           print('LIFEKEEPER_SEALED_SIGNING_JSON=' + json.dumps(result, separators=(',', ':')))
           PY

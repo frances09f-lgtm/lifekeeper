@@ -1,0 +1,34 @@
+name: Finish scope corrections
+on:
+  push:
+    paths: ['dev/fix_scope.py','.github/workflows/scope-corrections.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  correct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - run: python3 dev/fix_scope.py
+      - run: flutter pub get
+      - run: dart format lib test
+      - name: Commit source fixes without releasing
+        run: |
+          git config user.name 'LifeKeeper build'
+          git config user.email 'lifekeeper-build@users.noreply.github.com'
+          git add lib test pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m 'Finish custom category spending and snooze settings'
+            git push origin HEAD:main
+          fi
+      - run: flutter analyze --fatal-infos --fatal-warnings
+      - run: flutter test --coverage

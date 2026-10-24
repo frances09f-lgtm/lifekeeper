@@ -73,6 +73,11 @@ jobs:
           sha256sum "$RUNNER_TEMP/signer.der" | cut -d' ' -f1 > "$RUNNER_TEMP/expected-signer.txt"
       - name: Signed ARM64 build
         run: flutter build apk --release --target-platform android-arm64 --split-debug-info=build/symbols
+      - name: Largest APK entries (size diagnostics)
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          echo "APK bytes: $(stat -c%s "$APK")"
+          unzip -lv "$APK" | sort -k3 -n -r | head -n 30
       - name: Verify signature and record exact evidence
         run: |
           APK=build/app/outputs/flutter-apk/app-release.apk
@@ -82,12 +87,13 @@ jobs:
           "$APKSIGNER" verify --verbose --print-certs "$APK" > "$RUNNER_TEMP/apk-signature.txt" 2> "$RUNNER_TEMP/apk-signature-err.txt" || { echo "apksigner verify failed"; cat "$RUNNER_TEMP/apk-signature.txt"; cat "$RUNNER_TEMP/apk-signature-err.txt"; exit 1; }
           echo "apksigner stdout:"; cat "$RUNNER_TEMP/apk-signature.txt"
           echo "apksigner stderr:"; cat "$RUNNER_TEMP/apk-signature-err.txt"
-          ACTUAL="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt" | tr -d ':' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+          ACTUAL="$(sed -nE 's/^(Signer #1|V[0-9.]+ Signer): certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt" | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
           EXPECTED="$(tr -d '[:space:]' < "$RUNNER_TEMP/expected-signer.txt")"
           echo "expected signer digest: $EXPECTED"
           echo "actual signer digest:   $ACTUAL"
           test -n "$ACTUAL"
           test "$ACTUAL" = "$EXPECTED"
+          grep -q '^Number of signers: 1$' "$RUNNER_TEMP/apk-signature.txt"
           mkdir release-output
           cp "$APK" release-output/LifeKeeper-arm64.apk
           cp "$RUNNER_TEMP/apk-signature.txt" release-output/signature-verification.txt

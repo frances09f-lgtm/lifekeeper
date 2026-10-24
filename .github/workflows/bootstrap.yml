@@ -1,0 +1,34 @@
+name: Bootstrap Android scaffold
+on:
+  push:
+    paths: ['.github/workflows/bootstrap.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - name: Generate standard Android project
+        run: |
+          flutter --version
+          flutter create --platforms=android --org com.ambi --project-name lifekeeper --empty /tmp/gen
+          if [ ! -d android ]; then cp -r /tmp/gen/android android; fi
+          mkdir -p docs
+          { flutter --version; echo; find android -type f | sort; } > docs/toolchain.txt
+          git config user.name 'github-actions'
+          git config user.email 'github-actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'Add generated Android project scaffold and toolchain record' || echo nothing
+          git push

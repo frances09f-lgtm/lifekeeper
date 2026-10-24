@@ -1,0 +1,58 @@
+name: Prepare encrypted signing secrets
+on:
+  push:
+    paths:
+      - '.github/workflows/signing-bootstrap.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    # Preparation only, never builds or publishes an application release.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install signing dependencies
+        run: python -m pip install 'cryptography==43.0.3' 'PyNaCl==1.5.0'
+      - name: Generate signing identity and encrypt for repository secrets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import base64, datetime, hashlib, json, os, secrets, subprocess
+          from cryptography import x509
+          from cryptography.x509.oid import NameOID
+          from cryptography.hazmat.primitives import hashes, serialization
+          from cryptography.hazmat.primitives.asymmetric import rsa
+          from cryptography.hazmat.primitives.serialization import pkcs12
+          from nacl.public import PublicKey, SealedBox
+          from nacl.encoding import Base64Encoder
+          public_key = json.loads(subprocess.check_output(['gh', 'api', 'repos/' + os.environ['GH_REPO'] + '/actions/secrets/public-key']))
+          box = SealedBox(PublicKey(public_key['key'].encode(), Base64Encoder))
+          key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+          name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'LifeKeeper')])
+          now = datetime.datetime.now(datetime.timezone.utc)
+          cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name)
+                  .public_key(key.public_key()).serial_number(x509.random_serial_number())
+                  .not_valid_before(now - datetime.timedelta(days=1))
+                  .not_valid_after(now + datetime.timedelta(days=365*30)).sign(key, hashes.SHA256()))
+          password = secrets.token_urlsafe(32)
+          encryption = (serialization.PrivateFormat.PKCS12.encryption_builder().kdf_rounds(50000)
+                        .key_cert_algorithm(pkcs12.PBES.PBESv1SHA1And3KeyTripleDESCBC)
+                        .hmac_hash(hashes.SHA1()).build(password.encode()))
+          store = pkcs12.serialize_key_and_certificates(b'lifekeeper', key, cert, None, encryption)
+          loaded_key, loaded_cert, _ = pkcs12.load_key_and_certificates(store, password.encode())
+          assert loaded_key is not None and loaded_cert.fingerprint(hashes.SHA256()) == cert.fingerprint(hashes.SHA256())
+          def seal(text): return base64.b64encode(box.encrypt(text.encode())).decode()
+          result = {'key_id': public_key['key_id'], 'alias':'lifekeeper', 'store_type':'PKCS12',
+                    'certificate_sha256':cert.fingerprint(hashes.SHA256()).hex(),
+                    'secrets': {'LK_SIGNING_KEYSTORE_BASE64':seal(base64.b64encode(store).decode()),
+                                'LK_SIGNING_STORE_PASSWORD':seal(password)}}
+          # These are sealed-box ciphertexts, not usable signing secrets. Plain material is never logged or uploaded.
+          print('LIFEKEEPER_SEALED_SIGNING_JSON=' + json.dumps(result, separators=(',', ':')))
+          PY

@@ -1,0 +1,30 @@
+name: Verify release signing identity only
+on:
+  push:
+    paths: ['.github/workflows/check-signing.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-signing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Verify stored PKCS12 key and certificate
+        env:
+          SIGNING_STORE: ${{ secrets.LK_SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD: ${{ secrets.LK_SIGNING_STORE_PASSWORD }}
+        run: |
+          test -n "$SIGNING_STORE"
+          test -n "$SIGNING_PASSWORD"
+          trap 'rm -f "$RUNNER_TEMP/lifekeeper.p12" "$RUNNER_TEMP/signer.der"' EXIT
+          printf '%s' "$SIGNING_STORE" | base64 --decode > "$RUNNER_TEMP/lifekeeper.p12"
+          chmod 600 "$RUNNER_TEMP/lifekeeper.p12"
+          keytool -exportcert -keystore "$RUNNER_TEMP/lifekeeper.p12" -storetype PKCS12 -storepass:env SIGNING_PASSWORD -alias lifekeeper -file "$RUNNER_TEMP/signer.der"
+          ACTUAL="$(sha256sum "$RUNNER_TEMP/signer.der" | cut -d' ' -f1)"
+          test "$ACTUAL" = '365d68118a17328ce3c3c7e8f285de46cbcd728a162184dcfc4f2c1ec0a7f88b'
+          printf 'Signing identity verified: PKCS12 alias lifekeeper, certificate SHA256 %s\nPreparation only: no application analyze, tests, APK build or release performed\n' "$ACTUAL"

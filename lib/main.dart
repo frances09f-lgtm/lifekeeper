@@ -98,9 +98,7 @@ ThemeData lifeTheme(Brightness brightness) {
         surfaceContainerLow: surface,
         surfaceContainer: surface,
         surfaceContainerHigh: surface,
-        surfaceContainerHighest: dark
-            ? LkColors.softDark
-            : LkColors.soft,
+        surfaceContainerHighest: dark ? LkColors.softDark : LkColors.soft,
         outline: line,
         outlineVariant: line,
         error: dark ? LkColors.dangerDark : LkColors.danger,
@@ -841,9 +839,8 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(fontSize: 11),
               ),
               const SizedBox(height: 6),
               Text(
@@ -1772,7 +1769,6 @@ Future<bool> confirm(
       ),
     ) ??
     false;
-
 
 /// LifeKeeper mark: an "L" that finishes as a check, on a deep green tile.
 class LkLogo extends StatelessWidget {

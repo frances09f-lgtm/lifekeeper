@@ -53,19 +53,23 @@ void main() async {
 
 /// Minimal, professional palette: warm neutrals with one teal accent.
 class LkColors {
-  static const accent = Color(0xff0f766e);
-  static const accentDark = Color(0xff5eead4);
-  static const canvas = Color(0xfffafaf9);
-  static const canvasDark = Color(0xff0c0a09);
-  static const surfaceDark = Color(0xff1c1917);
-  static const line = Color(0xffe7e5e4);
-  static const lineDark = Color(0xff292524);
-  static const ink = Color(0xff1c1917);
-  static const inkDark = Color(0xfff5f5f4);
-  static const muted = Color(0xff57534e);
-  static const mutedDark = Color(0xffa8a29e);
-  static const danger = Color(0xffb42318);
-  static const dangerDark = Color(0xfffda29b);
+  static const accent = Color(0xff2c604c);
+  static const accentDark = Color(0xff8fb79a);
+  static const soft = Color(0xffe7efe8);
+  static const softDark = Color(0xff2b4534);
+  static const ring = Color(0xffb9cdbd);
+  static const ringDark = Color(0xff4f6b57);
+  static const canvas = Color(0xfff5f7f5);
+  static const canvasDark = Color(0xff15251d);
+  static const surfaceDark = Color(0xff203127);
+  static const line = Color(0xffe4eae5);
+  static const lineDark = Color(0xff35483a);
+  static const ink = Color(0xff1c332c);
+  static const inkDark = Color(0xffe2eee5);
+  static const muted = Color(0xff66776d);
+  static const mutedDark = Color(0xffa0b3a4);
+  static const danger = Color(0xffa63d32);
+  static const dangerDark = Color(0xfff0a397);
 }
 
 ThemeData lifeTheme(Brightness brightness) {
@@ -82,10 +86,10 @@ ThemeData lifeTheme(Brightness brightness) {
         brightness: brightness,
       ).copyWith(
         primary: accent,
-        onPrimary: dark ? LkColors.canvasDark : Colors.white,
-        primaryContainer: accent.withValues(alpha: dark ? 0.18 : 0.10),
+        onPrimary: dark ? const Color(0xff14251b) : Colors.white,
+        primaryContainer: dark ? LkColors.softDark : LkColors.soft,
         onPrimaryContainer: accent,
-        secondaryContainer: accent.withValues(alpha: dark ? 0.18 : 0.10),
+        secondaryContainer: dark ? LkColors.softDark : LkColors.soft,
         onSecondaryContainer: accent,
         surface: surface,
         onSurface: ink,
@@ -95,8 +99,8 @@ ThemeData lifeTheme(Brightness brightness) {
         surfaceContainer: surface,
         surfaceContainerHigh: surface,
         surfaceContainerHighest: dark
-            ? const Color(0xff292524)
-            : const Color(0xfff5f5f4),
+            ? LkColors.softDark
+            : LkColors.soft,
         outline: line,
         outlineVariant: line,
         error: dark ? LkColors.dangerDark : LkColors.danger,
@@ -108,7 +112,7 @@ ThemeData lifeTheme(Brightness brightness) {
   );
   final text = base.textTheme.apply(bodyColor: ink, displayColor: ink);
   final shape12 = RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(10),
   );
   return base.copyWith(
     scaffoldBackgroundColor: canvas,
@@ -117,9 +121,9 @@ ThemeData lifeTheme(Brightness brightness) {
     textTheme: text.copyWith(
       headlineMedium: text.headlineMedium?.copyWith(
         fontSize: 28,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.6,
-        height: 1.15,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -1,
+        height: 1.2,
       ),
       titleLarge: text.titleLarge?.copyWith(
         fontSize: 20,
@@ -675,19 +679,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
             toolbarHeight: 56,
             title: Row(
               children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: Icon(
-                    Icons.check_rounded,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
+                const LkLogo(size: 30),
                 const SizedBox(width: 10),
                 Text(
                   [
@@ -814,8 +806,9 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
               child: Text(
                 text,
                 style: t.titleMedium?.copyWith(
-                  fontSize: 15,
-                  letterSpacing: -0.1,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.3,
                 ),
               ),
             ),
@@ -835,26 +828,32 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
     builder: (context) {
       final scheme = Theme.of(context).colorScheme;
       return Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: Theme.of(context).dividerColor),
+        ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                value,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                  color: alert ? scheme.error : scheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 11),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.8,
+                  color: alert ? scheme.error : scheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -862,6 +861,66 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       );
     },
   );
+  Widget heroCard(BuildContext context, int count, int overdue) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final ring = dark ? LkColors.ringDark : LkColors.ring;
+    final t = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 22, 18, 22),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('NEEDS ATTENTION', style: t.labelSmall),
+                const SizedBox(height: 8),
+                Text(
+                  count == 0
+                      ? 'You are all caught up.'
+                      : '$count ${count == 1 ? 'thing' : 'things'} to keep an eye on.',
+                  style: t.headlineSmall?.copyWith(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.6,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${overdue > 0 ? '$overdue overdue. ' : ''}Sorted by what needs you first.',
+                  style: t.bodySmall?.copyWith(fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 14),
+          SizedBox(
+            width: 76,
+            height: 76,
+            child: CustomPaint(
+              painter: RadarRings(ring),
+              child: Center(
+                child: Text(
+                  '$count',
+                  style: t.headlineSmall?.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   IconData recordIcon(AdminRecord r) => switch (r.category) {
     'Warranty' => Icons.verified_user_outlined,
     'Subscription' => Icons.autorenew_rounded,
@@ -1137,6 +1196,8 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
         'Bills, renewals and warranties. All on this phone.',
         eyebrow: longDate(now),
       ),
+      heroCard(context, ranked.length, overdueCount),
+      const SizedBox(height: 12),
       Row(
         children: [
           Expanded(
@@ -1711,3 +1772,68 @@ Future<bool> confirm(
       ),
     ) ??
     false;
+
+
+/// LifeKeeper mark: an "L" that finishes as a check, on a deep green tile.
+class LkLogo extends StatelessWidget {
+  const LkLogo({super.key, this.size = 34});
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: scheme.primary,
+        borderRadius: BorderRadius.circular(size * 0.29),
+      ),
+      child: CustomPaint(painter: LkMarkPainter(scheme.onPrimary)),
+    );
+  }
+}
+
+class LkMarkPainter extends CustomPainter {
+  LkMarkPainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 48;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.4 * s
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final path = Path()
+      ..moveTo(16 * s, 12.5 * s)
+      ..lineTo(16 * s, 28.5 * s)
+      ..lineTo(21.5 * s, 34 * s)
+      ..lineTo(33 * s, 19.5 * s);
+    canvas.drawPath(path, p);
+  }
+
+  @override
+  bool shouldRepaint(LkMarkPainter old) => old.color != color;
+}
+
+/// Two quiet concentric rings behind the attention count.
+class RadarRings extends CustomPainter {
+  RadarRings(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    canvas.drawCircle(c, r - 0.5, p);
+    canvas.drawCircle(c, r * 0.66, p);
+    canvas.drawCircle(c, r * 0.33, p);
+  }
+
+  @override
+  bool shouldRepaint(RadarRings old) => old.color != color;
+}

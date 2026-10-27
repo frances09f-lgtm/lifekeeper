@@ -143,12 +143,25 @@ class BiometricUnlock {
     ),
   }) : auth = auth ?? LocalAuthentication();
 
-  Future<bool> enabled() async =>
-      await storage.read(key: 'biometricUnlock') == 'true';
+  Future<bool> enabled() async {
+    try {
+      return await storage.read(key: 'biometricUnlock') == 'true';
+    } catch (_) {
+      return false;
+    }
+  }
 
-  Future<void> setEnabled(bool on) async => on
-      ? await storage.write(key: 'biometricUnlock', value: 'true')
-      : await storage.delete(key: 'biometricUnlock');
+  Future<void> setEnabled(bool on) async {
+    try {
+      if (on) {
+        await storage.write(key: 'biometricUnlock', value: 'true');
+      } else {
+        await storage.delete(key: 'biometricUnlock');
+      }
+    } catch (_) {
+      // No secure storage (or a test environment): stay disabled.
+    }
+  }
 
   Future<bool> deviceSupports() async {
     try {

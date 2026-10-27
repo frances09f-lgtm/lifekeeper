@@ -26,10 +26,7 @@ extension SettingsView on _LifeKeeperState {
       },
     );
     return [
-      const Text(
-        'Settings',
-        style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-      ),
+      pageHeader('Settings', 'Appearance, reminders, security and backups.'),
       title('Appearance'),
       card(
         dropdown(settings['theme'] as String? ?? 'system', [

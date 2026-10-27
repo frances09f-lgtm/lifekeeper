@@ -51,44 +51,223 @@ void main() async {
   }
 }
 
+/// Minimal, professional palette: warm neutrals with one teal accent.
+class LkColors {
+  static const accent = Color(0xff2c604c);
+  static const accentDark = Color(0xff8fb79a);
+  static const soft = Color(0xffe7efe8);
+  static const softDark = Color(0xff2b4534);
+  static const ring = Color(0xffb9cdbd);
+  static const ringDark = Color(0xff4f6b57);
+  static const canvas = Color(0xfff5f7f5);
+  static const canvasDark = Color(0xff15251d);
+  static const surfaceDark = Color(0xff203127);
+  static const line = Color(0xffe4eae5);
+  static const lineDark = Color(0xff35483a);
+  static const ink = Color(0xff1c332c);
+  static const inkDark = Color(0xffe2eee5);
+  static const muted = Color(0xff66776d);
+  static const mutedDark = Color(0xffa0b3a4);
+  static const danger = Color(0xffa63d32);
+  static const dangerDark = Color(0xfff0a397);
+}
+
 ThemeData lifeTheme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
-  final scheme = ColorScheme.fromSeed(
-    seedColor: const Color(0xff006c58),
-    brightness: brightness,
-  );
-  return ThemeData(
+  final accent = dark ? LkColors.accentDark : LkColors.accent;
+  final line = dark ? LkColors.lineDark : LkColors.line;
+  final ink = dark ? LkColors.inkDark : LkColors.ink;
+  final muted = dark ? LkColors.mutedDark : LkColors.muted;
+  final surface = dark ? LkColors.surfaceDark : Colors.white;
+  final canvas = dark ? LkColors.canvasDark : LkColors.canvas;
+  final scheme =
+      ColorScheme.fromSeed(
+        seedColor: LkColors.accent,
+        brightness: brightness,
+      ).copyWith(
+        primary: accent,
+        onPrimary: dark ? const Color(0xff14251b) : Colors.white,
+        primaryContainer: dark ? LkColors.softDark : LkColors.soft,
+        onPrimaryContainer: accent,
+        secondaryContainer: dark ? LkColors.softDark : LkColors.soft,
+        onSecondaryContainer: accent,
+        surface: surface,
+        onSurface: ink,
+        onSurfaceVariant: muted,
+        surfaceContainerLowest: surface,
+        surfaceContainerLow: surface,
+        surfaceContainer: surface,
+        surfaceContainerHigh: surface,
+        surfaceContainerHighest: dark
+            ? LkColors.softDark
+            : LkColors.soft,
+        outline: line,
+        outlineVariant: line,
+        error: dark ? LkColors.dangerDark : LkColors.danger,
+      );
+  final base = ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
     brightness: brightness,
-    scaffoldBackgroundColor: dark
-        ? const Color(0xff10221c)
-        : const Color(0xffeaf5ee),
+  );
+  final text = base.textTheme.apply(bodyColor: ink, displayColor: ink);
+  final shape12 = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(10),
+  );
+  return base.copyWith(
+    scaffoldBackgroundColor: canvas,
+    dividerColor: line,
+    dividerTheme: DividerThemeData(color: line, thickness: 1, space: 1),
+    textTheme: text.copyWith(
+      headlineMedium: text.headlineMedium?.copyWith(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -1,
+        height: 1.2,
+      ),
+      titleLarge: text.titleLarge?.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+      ),
+      titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      bodyMedium: text.bodyMedium?.copyWith(height: 1.4),
+      bodySmall: text.bodySmall?.copyWith(color: muted, height: 1.4),
+      labelSmall: text.labelSmall?.copyWith(
+        color: muted,
+        letterSpacing: 0.6,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
     cardTheme: CardThemeData(
-      color: dark ? const Color(0xff1d3028) : Colors.white,
+      color: surface,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: line),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      iconColor: muted,
+      subtitleTextStyle: text.bodySmall?.copyWith(color: muted),
+      shape: shape12,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: scheme.surface,
+      fillColor: surface,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      hintStyle: TextStyle(color: muted),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide.none,
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: line),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: line),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: accent, width: 1.5),
       ),
     ),
-    appBarTheme: const AppBarTheme(
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        shape: shape12,
+        textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        shape: shape12,
+        foregroundColor: ink,
+        side: BorderSide(color: line),
+        textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        shape: shape12,
+        textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+      ),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: surface,
+      selectedColor: scheme.primaryContainer,
+      side: BorderSide(color: line),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      labelStyle: text.labelLarge?.copyWith(
+        color: ink,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+    appBarTheme: AppBarTheme(
       centerTitle: false,
-      backgroundColor: Colors.transparent,
+      backgroundColor: canvas,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      elevation: 0,
+      foregroundColor: ink,
+      titleTextStyle: text.titleMedium?.copyWith(
+        color: ink,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+      ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: scheme.surface,
+      backgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      height: 68,
       indicatorColor: scheme.primaryContainer,
+      indicatorShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      iconTheme: WidgetStateProperty.resolveWith(
+        (s) => IconThemeData(
+          color: s.contains(WidgetState.selected) ? accent : muted,
+          size: 22,
+        ),
+      ),
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (s) => text.labelMedium?.copyWith(
+          fontSize: 12,
+          fontWeight: s.contains(WidgetState.selected)
+              ? FontWeight.w600
+              : FontWeight.w500,
+          color: s.contains(WidgetState.selected) ? ink : muted,
+        ),
+      ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: scheme.primary,
+      backgroundColor: accent,
       foregroundColor: scheme.onPrimary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      elevation: 2,
+      highlightElevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+    ),
+    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+    popupMenuTheme: PopupMenuThemeData(
+      color: surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: line),
+      ),
     ),
   );
 }
@@ -396,28 +575,73 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.lock_outline, size: 48),
-                            const SizedBox(height: 20),
-                            const Text(
-                              'Unlock LifeKeeper',
-                              style: TextStyle(fontSize: 26),
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Icon(
+                                Icons.lock_outline,
+                                size: 26,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                             ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Unlock LifeKeeper',
+                              style: Theme.of(context).textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Enter your PIN to continue',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const SizedBox(height: 24),
                             TextField(
                               controller: pinInput,
                               obscureText: true,
                               keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                letterSpacing: 8,
+                              ),
                               decoration: InputDecoration(
-                                labelText: 'PIN',
+                                hintText: 'PIN',
                                 errorText: pinError.isEmpty ? null : pinError,
                               ),
                               onSubmitted: (_) => unlock(),
                             ),
                             const SizedBox(height: 16),
-                            FilledButton(
-                              onPressed: unlock,
-                              child: const Text('Unlock'),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                onPressed: unlock,
+                                child: const Text('Unlock'),
+                              ),
                             ),
-                            const Text('Your records stay on this phone'),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.shield_outlined,
+                                  size: 14,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Your records stay on this phone',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -452,8 +676,21 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       home: Builder(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: Text(
-              ['LifeKeeper', 'Calendar', 'Spending', 'Vault', 'Settings'][tab],
+            toolbarHeight: 56,
+            title: Row(
+              children: [
+                const LkLogo(size: 30),
+                const SizedBox(width: 10),
+                Text(
+                  [
+                    'LifeKeeper',
+                    'Calendar',
+                    'Spending',
+                    'Vault',
+                    'Settings',
+                  ][tab],
+                ),
+              ],
             ),
           ),
           body: loading
@@ -475,7 +712,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                   child: RefreshIndicator(
                     onRefresh: reload,
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 112),
                       children: tab == 0
                           ? home(context)
                           : tab == 1
@@ -493,41 +730,44 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
               : FloatingActionButton(
                   onPressed: () => edit(),
                   tooltip: 'Add record',
-                  child: const Icon(Icons.add, size: 32),
+                  child: const Icon(Icons.add, size: 28),
                 ),
-          bottomNavigationBar: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(40),
-                child: NavigationBar(
-                  selectedIndex: tab,
-                  onDestinationSelected: (v) => setState(() => tab = v),
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
-                      label: 'Home',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.calendar_month_outlined),
-                      label: 'Calendar',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.bar_chart),
-                      label: 'Spending',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.folder_outlined),
-                      label: 'Vault',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.settings_outlined),
-                      label: 'Settings',
-                    ),
-                  ],
-                ),
+          bottomNavigationBar: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Theme.of(context).dividerColor),
               ),
+            ),
+            child: NavigationBar(
+              selectedIndex: tab,
+              onDestinationSelected: (v) => setState(() => tab = v),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'Home',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.calendar_today_outlined),
+                  selectedIcon: Icon(Icons.calendar_today_rounded),
+                  label: 'Calendar',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.insights_outlined),
+                  selectedIcon: Icon(Icons.insights_rounded),
+                  label: 'Spending',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.folder_outlined),
+                  selectedIcon: Icon(Icons.folder_rounded),
+                  label: 'Vault',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.settings_outlined),
+                  selectedIcon: Icon(Icons.settings_rounded),
+                  label: 'Settings',
+                ),
+              ],
             ),
           ),
         ),
@@ -535,90 +775,366 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
     );
   }
 
-  Widget title(String text) => Padding(
-    padding: const EdgeInsets.only(top: 24, bottom: 12),
-    child: Text(
-      text,
-      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+  Widget pageHeader(String heading, String sub, {String? eyebrow}) => Builder(
+    builder: (context) {
+      final t = Theme.of(context).textTheme;
+      return Padding(
+        padding: const EdgeInsets.only(top: 8, bottom: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (eyebrow != null) ...[
+              Text(eyebrow.toUpperCase(), style: t.labelSmall),
+              const SizedBox(height: 6),
+            ],
+            Text(heading, style: t.headlineMedium),
+            const SizedBox(height: 6),
+            Text(sub, style: t.bodySmall?.copyWith(fontSize: 14)),
+          ],
+        ),
+      );
+    },
+  );
+  Widget title(String text, {String? trailing}) => Builder(
+    builder: (context) {
+      final t = Theme.of(context).textTheme;
+      return Padding(
+        padding: const EdgeInsets.only(top: 28, bottom: 10),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                text,
+                style: t.titleMedium?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ),
+            if (trailing != null) Text(trailing, style: t.bodySmall),
+          ],
+        ),
+      );
+    },
+  );
+  Widget card(Widget child) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Card(
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
     ),
   );
-  Widget card(Widget child) => Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: Padding(padding: const EdgeInsets.all(18), child: child),
-  );
-  Widget tile(AdminRecord r, {RadarResult? result}) {
-    final delta = r.due?.difference(day(DateTime.now())).inDays;
-    return card(
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            onTap: () => details(r),
-            leading: Icon(
-              r.category == 'Warranty'
-                  ? Icons.verified_user_outlined
-                  : r.category == 'Subscription'
-                  ? Icons.autorenew
-                  : Icons.description_outlined,
-            ),
-            title: Text(
-              r.title,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            subtitle: Text(
-              '${r.flag('demo') ? 'DEMO · ' : ''}${r.category} · ${r.due == null ? 'No due date' : dateText(r.due)}${delta != null && delta < 0 ? ' · ${-delta} days past due' : ''}\n${r.amount == null ? '' : money(r.amount!, r.currency)}${r.status == 'active' && (r.category == 'Bill' || r.category == 'Subscription') ? ' · Payment not marked as paid' : ''}',
-            ),
-            trailing: const Icon(Icons.chevron_right),
+  Widget statTile(String value, String label, {bool alert = false}) => Builder(
+    builder: (context) {
+      final scheme = Theme.of(context).colorScheme;
+      return Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 11),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.8,
+                  color: alert ? scheme.error : scheme.onSurface,
+                ),
+              ),
+            ],
           ),
-          if (result != null) ...[
-            Text('${result.label} · score ${result.score}'),
-            Text(
-              result.reasons.isEmpty
-                  ? 'No urgent rule matched'
-                  : result.reasons.join(' · '),
-            ),
-            Wrap(
-              spacing: 8,
+        ),
+      );
+    },
+  );
+  Widget heroCard(BuildContext context, int count, int overdue) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final ring = dark ? LkColors.ringDark : LkColors.ring;
+    final t = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 22, 18, 22),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextButton(
-                  onPressed: () => action(() async {
-                    await repo.complete(r.id!);
-                  }),
-                  child: Text(
-                    r.category == 'Bill' || r.category == 'Subscription'
-                        ? 'Mark paid'
-                        : 'Complete',
+                Text('NEEDS ATTENTION', style: t.labelSmall),
+                const SizedBox(height: 8),
+                Text(
+                  count == 0
+                      ? 'You are all caught up.'
+                      : '$count ${count == 1 ? 'thing' : 'things'} to keep an eye on.',
+                  style: t.headlineSmall?.copyWith(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: -0.6,
+                    height: 1.2,
                   ),
                 ),
-                TextButton(
-                  onPressed: () =>
-                      action(() => repo.snooze(r.id!, const Duration(days: 1))),
-                  child: const Text('Snooze'),
-                ),
-                TextButton(
-                  onPressed: () => action(
-                    () => repo.patch(r.id!, {
-                      'dismissUntil': DateTime.now()
-                          .add(const Duration(days: 1))
-                          .toIso8601String(),
-                    }),
-                  ),
-                  child: const Text('Dismiss 1 day'),
-                ),
-                TextButton(
-                  onPressed: () => details(r),
-                  child: const Text('Investigate'),
+                const SizedBox(height: 8),
+                Text(
+                  '${overdue > 0 ? '$overdue overdue. ' : ''}Sorted by what needs you first.',
+                  style: t.bodySmall?.copyWith(fontSize: 12),
                 ),
               ],
             ),
-          ],
+          ),
+          const SizedBox(width: 14),
+          SizedBox(
+            width: 76,
+            height: 76,
+            child: CustomPaint(
+              painter: RadarRings(ring),
+              child: Center(
+                child: Text(
+                  '$count',
+                  style: t.headlineSmall?.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
+  IconData recordIcon(AdminRecord r) => switch (r.category) {
+    'Warranty' => Icons.verified_user_outlined,
+    'Subscription' => Icons.autorenew_rounded,
+    'ID' => Icons.badge_outlined,
+    'Policy' => Icons.shield_outlined,
+    'Vehicle' => Icons.directions_car_outlined,
+    _ => Icons.receipt_long_outlined,
+  };
+  Widget pill(String text, {bool strong = false}) => Builder(
+    builder: (context) {
+      final scheme = Theme.of(context).colorScheme;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: strong
+              ? scheme.error.withValues(alpha: 0.10)
+              : scheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: strong ? scheme.error : scheme.onSurfaceVariant,
+          ),
+        ),
+      );
+    },
+  );
+  Widget tile(AdminRecord r, {RadarResult? result}) {
+    final delta = r.due?.difference(day(DateTime.now())).inDays;
+    final payable = r.category == 'Bill' || r.category == 'Subscription';
+    final overdue = r.status == 'active' && delta != null && delta < 0;
+    final when = r.due == null
+        ? 'No due date'
+        : delta == 0
+        ? 'Due today'
+        : delta == 1
+        ? 'Due tomorrow'
+        : overdue
+        ? '${-delta} days overdue'
+        : 'Due ${prettyDate(r.due)}';
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                InkWell(
+                  onTap: () => details(r),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            recordIcon(r),
+                            size: 20,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                r.title.isEmpty ? 'Untitled' : r.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${r.flag('demo') ? 'Demo · ' : ''}${r.category} · $when',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: overdue ? scheme.error : null,
+                                ),
+                              ),
+                              if (r.status == 'active' && payable)
+                                Text(
+                                  'Payment not marked as paid',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (r.amount != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            money(r.amount!, r.currency),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontSize: 15,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ],
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (result != null) ...[
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        pill(
+                          '${result.label} · ${result.score}',
+                          strong: result.score >= 50,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            result.reasons.isEmpty
+                                ? 'No urgent rule matched'
+                                : result.reasons.join(' · '),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+                    child: Row(
+                      children: [
+                        TextButton(
+                          onPressed: () => action(() async {
+                            await repo.complete(r.id!);
+                          }),
+                          child: Text(payable ? 'Mark paid' : 'Complete'),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: scheme.onSurfaceVariant,
+                          ),
+                          onPressed: () => action(
+                            () => repo.snooze(r.id!, const Duration(days: 1)),
+                          ),
+                          child: const Text('Snooze'),
+                        ),
+                        const Spacer(),
+                        PopupMenuButton<String>(
+                          tooltip: 'More actions',
+                          icon: Icon(
+                            Icons.more_horiz_rounded,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                          onSelected: (v) {
+                            if (v == 'dismiss') {
+                              action(
+                                () => repo.patch(r.id!, {
+                                  'dismissUntil': DateTime.now()
+                                      .add(const Duration(days: 1))
+                                      .toIso8601String(),
+                                }),
+                              );
+                            } else {
+                              details(r);
+                            }
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem(
+                              value: 'dismiss',
+                              child: Text('Dismiss 1 day'),
+                            ),
+                            PopupMenuItem(
+                              value: 'investigate',
+                              child: Text('Investigate'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   List<Widget> home(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final now = day(DateTime.now());
     final active = records.where((r) => r.status == 'active').toList();
     final ranked = radar(
@@ -633,6 +1149,9 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
               !r.due!.isBefore(now) &&
               r.due!.isBefore(now.add(Duration(days: days))),
         )
+        .length;
+    final overdueCount = active
+        .where((r) => r.due?.isBefore(now) ?? false)
         .length;
     final visible = records
         .where(
@@ -659,168 +1178,237 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       visible.sort(
         (a, b) => (a.due ?? DateTime(2200)).compareTo(b.due ?? DateTime(2200)),
       );
+    List<AdminRecord> dueOn(DateTime d) =>
+        active.where((r) => r.text('due') == dateText(d)).toList();
+    final upcoming = [...active]
+      ..sort(
+        (a, b) => (a.due ?? DateTime(2200)).compareTo(b.due ?? DateTime(2200)),
+      );
+    final overlaps = active
+        .map((r) => r.text('due'))
+        .where((d) => d.isNotEmpty)
+        .toSet()
+        .where((d) => active.where((r) => r.text('due') == d).length > 1)
+        .toList();
     return [
-      const Text(
+      pageHeader(
         'Your admin, handled',
-        style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800),
+        'Bills, renewals and warranties. All on this phone.',
+        eyebrow: longDate(now),
       ),
-      const Text('Bills, renewals and warranties. All on this phone.'),
-      const SizedBox(height: 18),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
+      heroCard(context, ranked.length, overdueCount),
+      const SizedBox(height: 12),
+      Row(
         children: [
-          Chip(
-            label: Text(
-              '${active.where((r) => r.due?.isBefore(now) ?? false).length} overdue',
+          Expanded(
+            child: statTile(
+              '$overdueCount',
+              'Overdue',
+              alert: overdueCount > 0,
             ),
           ),
-          Chip(label: Text('${count(7)} this week')),
-          Chip(label: Text('${count(30)} this month')),
+          const SizedBox(width: 10),
+          Expanded(child: statTile('${count(7)}', 'This week')),
+          const SizedBox(width: 10),
+          Expanded(child: statTile('${count(30)}', 'This month')),
         ],
       ),
-      Wrap(
-        spacing: 10,
+      const SizedBox(height: 12),
+      Row(
         children: [
-          FilledButton.icon(
-            onPressed: scan,
-            icon: const Icon(Icons.document_scanner_outlined),
-            label: const Text('Scan bill'),
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: scan,
+              icon: const Icon(Icons.document_scanner_outlined, size: 20),
+              label: const Text('Scan bill'),
+            ),
           ),
-          OutlinedButton.icon(
-            onPressed: quick,
-            icon: const Icon(Icons.bolt),
-            label: const Text('Quick add'),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: quick,
+              icon: const Icon(Icons.bolt_rounded, size: 20),
+              label: const Text('Quick add'),
+            ),
           ),
         ],
       ),
-      title('Attention Queue'),
+      title(
+        'Needs attention',
+        trailing: ranked.isEmpty ? null : '${ranked.length} items',
+      ),
       if (ranked.isEmpty)
         card(
-          const Text(
-            'All clear. Add a bill, document or renewal to get started.',
+          Row(
+            children: [
+              Icon(Icons.check_circle_outline_rounded, color: scheme.primary),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'All clear. Add a bill, document or renewal to get started.',
+                ),
+              ),
+            ],
           ),
         ),
       for (final r in ranked.take(3)) tile(r.record, result: r),
-      title('7-day timeline'),
-      card(
-        Column(
+      title('Next 7 days'),
+      Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
           children: [
-            for (var i = 0; i < 7; i++)
-              ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: Text(dateText(now.add(Duration(days: i)))),
-                subtitle: Text(
-                  active
-                          .where(
-                            (r) =>
-                                r.text('due') ==
-                                dateText(now.add(Duration(days: i))),
-                          )
-                          .map((r) => r.title)
-                          .join(', ')
-                          .isEmpty
-                      ? 'No due items'
-                      : active
-                            .where(
-                              (r) =>
-                                  r.text('due') ==
-                                  dateText(now.add(Duration(days: i))),
-                            )
-                            .map((r) => r.title)
-                            .join(', '),
-                ),
+            for (var i = 0; i < 7; i++) ...[
+              if (i > 0) const Divider(),
+              InkWell(
                 onTap: () => setState(() {
                   selected = now.add(Duration(days: i));
                   month = DateTime(selected.year, selected.month);
                   tab = 1;
                 }),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 92,
+                        child: Text(
+                          i == 0
+                              ? 'Today'
+                              : i == 1
+                              ? 'Tomorrow'
+                              : shortDay(now.add(Duration(days: i))),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          dueOn(now.add(Duration(days: i))).isEmpty
+                              ? 'No due items'
+                              : dueOn(now.add(Duration(days: i)))
+                                    .map((r) => r.title)
+                                    .join(', '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: dueOn(now.add(Duration(days: i))).isEmpty
+                              ? theme.textTheme.bodySmall
+                              : theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+            ],
           ],
         ),
       ),
       title('Ask LifeKeeper'),
-      card(
-        Column(
-          children: [
-            const Text('Local keyword search and summaries. No AI model.'),
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search your records',
-              ),
-              onChanged: (v) => setState(() => search = v),
-            ),
-            Text(
-              '${active.length} active items · ${records.where((r) => r.category == 'Warranty').length} warranties',
-            ),
-          ],
+      TextField(
+        decoration: const InputDecoration(
+          hintText: 'Search your records',
+          prefixIcon: Icon(Icons.search_rounded, size: 20),
+        ),
+        onChanged: (v) => setState(() => search = v),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(top: 8, left: 4),
+        child: Text(
+          '${active.length} active items · ${records.where((r) => r.category == 'Warranty').length} warranties · Local keyword search, no AI model',
+          style: theme.textTheme.bodySmall,
         ),
       ),
-      title('Widget preview'),
+      title('Widget preview', trailing: 'Preview only'),
       card(
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Preview only, not a phone home-screen widget'),
-            for (final r
-                in (active..sort(
-                      (a, b) => (a.due ?? DateTime(2200)).compareTo(
-                        b.due ?? DateTime(2200),
+            Text(
+              'Not a phone home-screen widget',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            if (upcoming.isEmpty)
+              const Text('Nothing upcoming')
+            else
+              for (final r in upcoming.take(3))
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          r.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ))
-                    .take(3))
-              Text('${r.title} · ${dateText(r.due)}'),
+                      Text(
+                        r.due == null ? 'No date' : prettyDate(r.due),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
           ],
         ),
       ),
-      if (active.any((r) => r.dependencies.isNotEmpty)) ...[
+      if (active.any((r) => r.dependencies.isNotEmpty) ||
+          overlaps.isNotEmpty) ...[
         title('Dependencies and overlaps'),
         card(
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final r in active.where((r) => r.dependencies.isNotEmpty))
-                Text(
-                  '${r.title} depends on ${r.dependencies.map((id) => records.where((x) => x.id == id).firstOrNull?.title ?? 'missing record').join(', ')}',
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Text(
+                    '${r.title} depends on ${r.dependencies.map((id) => records.where((x) => x.id == id).firstOrNull?.title ?? 'missing record').join(', ')}',
+                  ),
                 ),
-              for (final d
-                  in active
-                      .map((r) => r.text('due'))
-                      .where((d) => d.isNotEmpty)
-                      .toSet()
-                      .where(
-                        (d) =>
-                            active.where((r) => r.text('due') == d).length > 1,
-                      ))
-                Text(
-                  '$d: ${active.where((r) => r.text('due') == d).map((r) => r.title).join(', ')}',
+              for (final d in overlaps)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Text(
+                    '${prettyDate(strictDate(d))}: ${active.where((r) => r.text('due') == d).map((r) => r.title).join(', ')}',
+                  ),
                 ),
             ],
           ),
         ),
       ],
-      title('Record manager'),
-      Wrap(
-        spacing: 10,
-        runSpacing: 8,
-        children: [
-          dropdown(category, [
-            'All',
-            ...records.map((r) => r.category).toSet(),
-          ], (v) => setState(() => category = v)),
-          dropdown(status, [
-            'All',
-            'active',
-            'completed',
-            'archived',
-          ], (v) => setState(() => status = v)),
-          dropdown(sort, [
-            'Due date',
-            'Title',
-            'Priority',
-          ], (v) => setState(() => sort = v)),
-        ],
+      title('All records', trailing: '${visible.length} shown'),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            dropdown(
+              category,
+              ['All', ...records.map((r) => r.category).toSet()],
+              (v) => setState(() => category = v),
+              label: 'Category',
+            ),
+            const SizedBox(width: 8),
+            dropdown(
+              status,
+              ['All', 'active', 'completed', 'archived'],
+              (v) => setState(() => status = v),
+              label: 'Status',
+            ),
+            const SizedBox(width: 8),
+            dropdown(
+              sort,
+              ['Due date', 'Title', 'Priority'],
+              (v) => setState(() => sort = v),
+              label: 'Sort',
+            ),
+          ],
+        ),
       ),
       const SizedBox(height: 12),
       if (visible.isEmpty) card(const Text('No records match these filters')),
@@ -831,90 +1419,193 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
   Widget dropdown(
     String current,
     List<String> options,
-    void Function(String) onChanged,
-  ) => DropdownButton<String>(
-    value: options.contains(current) ? current : options.first,
-    items: options
-        .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-        .toList(),
-    onChanged: (v) {
-      if (v != null) onChanged(v);
+    void Function(String) onChanged, {
+    String? label,
+  }) => Builder(
+    builder: (context) {
+      final theme = Theme.of(context);
+      final value = options.contains(current) ? current : options.first;
+      return Container(
+        height: 38,
+        padding: const EdgeInsets.only(left: 12, right: 6),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          border: Border.all(color: theme.dividerColor),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: value,
+            isDense: true,
+            borderRadius: BorderRadius.circular(12),
+            icon: const Icon(Icons.expand_more_rounded, size: 18),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+            selectedItemBuilder: (context) => options
+                .map(
+                  (v) => Center(
+                    child: Text(
+                      label == null
+                          ? capitalize(v)
+                          : '$label: ${capitalize(v)}',
+                    ),
+                  ),
+                )
+                .toList(),
+            items: options
+                .map(
+                  (v) => DropdownMenuItem(value: v, child: Text(capitalize(v))),
+                )
+                .toList(),
+            onChanged: (v) {
+              if (v != null) onChanged(v);
+            },
+          ),
+        ),
+      );
     },
   );
   List<Widget> calendar() {
     final first = DateTime(month.year, month.month);
     final length = DateTime(month.year, month.month + 1, 0).day;
     final offset = first.weekday - 1;
+    final today = day(DateTime.now());
+    final dueSelected = records
+        .where(
+          (r) => r.status == 'active' && r.text('due') == dateText(selected),
+        )
+        .toList();
     return [
-      Row(
-        children: [
-          IconButton(
-            onPressed: () =>
-                setState(() => month = DateTime(month.year, month.month - 1)),
-            icon: const Icon(Icons.chevron_left),
-          ),
-          Expanded(
-            child: Text(
-              '${month.year} · ${const ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month.month - 1]}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 24),
-            ),
-          ),
-          IconButton(
-            onPressed: () =>
-                setState(() => month = DateTime(month.year, month.month + 1)),
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          for (final d in ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
-            Expanded(child: Center(child: Text(d))),
-        ],
-      ),
-      GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: offset + length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 7,
-        ),
-        itemBuilder: (context, i) {
-          if (i < offset) return const SizedBox();
-          final d = DateTime(month.year, month.month, i - offset + 1);
-          final dues = records
-              .where(
-                (r) => r.status == 'active' && r.text('due') == dateText(d),
-              )
-              .length;
-          return TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: d == selected
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : null,
-            ),
-            onPressed: () => setState(() => selected = d),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('${d.day}'),
-                if (dues > 0)
-                  Text('• $dues', style: const TextStyle(fontSize: 11)),
-              ],
+      Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          final scheme = theme.colorScheme;
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '${const ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month.month - 1]} ${month.year}',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Previous month',
+                        onPressed: () => setState(
+                          () => month = DateTime(month.year, month.month - 1),
+                        ),
+                        icon: const Icon(Icons.chevron_left_rounded),
+                      ),
+                      IconButton(
+                        tooltip: 'Next month',
+                        onPressed: () => setState(
+                          () => month = DateTime(month.year, month.month + 1),
+                        ),
+                        icon: const Icon(Icons.chevron_right_rounded),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      for (final d in ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+                        Expanded(
+                          child: Center(
+                            child: Text(d, style: theme.textTheme.labelSmall),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: offset + length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 7,
+                          mainAxisSpacing: 2,
+                          crossAxisSpacing: 2,
+                        ),
+                    itemBuilder: (context, i) {
+                      if (i < offset) return const SizedBox();
+                      final d = DateTime(
+                        month.year,
+                        month.month,
+                        i - offset + 1,
+                      );
+                      final dues = records
+                          .where(
+                            (r) =>
+                                r.status == 'active' &&
+                                r.text('due') == dateText(d),
+                          )
+                          .length;
+                      final isSelected = d == selected;
+                      final isToday = d == today;
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => setState(() => selected = d),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected ? scheme.primary : null,
+                            borderRadius: BorderRadius.circular(10),
+                            border: isToday && !isSelected
+                                ? Border.all(color: scheme.primary)
+                                : null,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${d.day}',
+                                style: TextStyle(
+                                  fontWeight: isSelected || isToday
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? scheme.onPrimary
+                                      : scheme.onSurface,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: dues == 0
+                                      ? Colors.transparent
+                                      : isSelected
+                                      ? scheme.onPrimary
+                                      : scheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           );
         },
       ),
-      title('Due ${dateText(selected)}'),
-      if (!records.any(
-        (r) => r.status == 'active' && r.text('due') == dateText(selected),
-      ))
+      title(
+        'Due ${prettyDate(selected)}',
+        trailing: dueSelected.isEmpty ? null : '${dueSelected.length} items',
+      ),
+      if (dueSelected.isEmpty)
         card(const Text('No active items due on this date')),
-      for (final r in records.where(
-        (r) => r.status == 'active' && r.text('due') == dateText(selected),
-      ))
-        tile(r),
+      for (final r in dueSelected) tile(r),
     ];
   }
 
@@ -932,57 +1623,95 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
               ].contains(r.category),
         )
         .toList();
+    final shown = docs
+        .where(
+          (r) =>
+              (search.isEmpty ||
+                  r.data.values
+                      .join(' ')
+                      .toLowerCase()
+                      .contains(search.toLowerCase())) &&
+              (settings['vaultExpiry'] != true ||
+                  (r.due != null &&
+                      r.due!.isBefore(
+                        day(DateTime.now()).add(const Duration(days: 31)),
+                      ))),
+        )
+        .toList();
     return [
-      const Text(
+      pageHeader(
         'Your private vault',
-        style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
-      ),
-      const Text(
         'Photos, PDFs, extracted text and expiry dates stay on this phone.',
       ),
       TextField(
         decoration: const InputDecoration(
           hintText: 'Search attachments or document text',
+          prefixIcon: Icon(Icons.search_rounded, size: 20),
         ),
         onChanged: (v) => setState(() => search = v),
       ),
+      const SizedBox(height: 10),
       Wrap(
         spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           FilterChip(
             label: const Text('Expires in 30 days'),
             selected: settings['vaultExpiry'] == true,
             onSelected: (v) => action(() => repo.setting('vaultExpiry', v)),
           ),
-          TextButton(
+          ActionChip(
+            avatar: const Icon(Icons.sms_outlined, size: 16),
+            label: const Text('SMS bill demo'),
             onPressed: () => quick(sms: true),
-            child: const Text('SMS bill demo'),
           ),
         ],
       ),
-      for (final r in docs.where(
-        (r) =>
-            (search.isEmpty ||
-                r.data.values
-                    .join(' ')
-                    .toLowerCase()
-                    .contains(search.toLowerCase())) &&
-            (settings['vaultExpiry'] != true ||
-                (r.due != null &&
-                    r.due!.isBefore(
-                      day(DateTime.now()).add(const Duration(days: 31)),
-                    ))),
-      ))
-        tile(r),
+      title('Documents', trailing: '${shown.length} items'),
+      for (final r in shown) tile(r),
       if (docs.isEmpty)
         card(
           const Text(
             'Add a warranty, ID, policy, subscription or attachment to see it here',
           ),
-        ),
+        )
+      else if (shown.isEmpty)
+        card(const Text('No documents match this search')),
     ];
   }
 }
+
+const _months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/// Human date for display, e.g. "5 Nov 2026". Storage keeps ISO dates.
+String prettyDate(DateTime? d) =>
+    d == null ? '' : '${d.day} ${_months[d.month - 1]} ${d.year}';
+
+/// e.g. "Thu 29 Oct".
+String shortDay(DateTime d) =>
+    '${_weekdays[d.weekday - 1]} ${d.day} ${_months[d.month - 1]}';
+
+/// e.g. "Tuesday, 27 October".
+String longDate(DateTime d) =>
+    '${const ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][d.weekday - 1]}, ${d.day} ${const ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][d.month - 1]}';
+
+String capitalize(String s) =>
+    s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
 
 Future<String?> prompt(
   BuildContext context,
@@ -1043,3 +1772,68 @@ Future<bool> confirm(
       ),
     ) ??
     false;
+
+
+/// LifeKeeper mark: an "L" that finishes as a check, on a deep green tile.
+class LkLogo extends StatelessWidget {
+  const LkLogo({super.key, this.size = 34});
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: scheme.primary,
+        borderRadius: BorderRadius.circular(size * 0.29),
+      ),
+      child: CustomPaint(painter: LkMarkPainter(scheme.onPrimary)),
+    );
+  }
+}
+
+class LkMarkPainter extends CustomPainter {
+  LkMarkPainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.width / 48;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.4 * s
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final path = Path()
+      ..moveTo(16 * s, 12.5 * s)
+      ..lineTo(16 * s, 28.5 * s)
+      ..lineTo(21.5 * s, 34 * s)
+      ..lineTo(33 * s, 19.5 * s);
+    canvas.drawPath(path, p);
+  }
+
+  @override
+  bool shouldRepaint(LkMarkPainter old) => old.color != color;
+}
+
+/// Two quiet concentric rings behind the attention count.
+class RadarRings extends CustomPainter {
+  RadarRings(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    canvas.drawCircle(c, r - 0.5, p);
+    canvas.drawCircle(c, r * 0.66, p);
+    canvas.drawCircle(c, r * 0.33, p);
+  }
+
+  @override
+  bool shouldRepaint(RadarRings old) => old.color != color;
+}

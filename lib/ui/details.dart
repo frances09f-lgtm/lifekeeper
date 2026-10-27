@@ -120,7 +120,7 @@ class _RecordDetailsState extends State<RecordDetails> {
   Widget build(BuildContext context) {
     final r = record;
     return Scaffold(
-      appBar: AppBar(title: Text(r?.title ?? 'Record')),
+      appBar: AppBar(title: const Text('Record')),
       body: !loaded
           ? const Center(child: CircularProgressIndicator())
           : r == null
@@ -130,24 +130,70 @@ class _RecordDetailsState extends State<RecordDetails> {
               children: [
                 Text(
                   r.title,
-                  style: const TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${r.flag('demo') ? 'Demo · ' : ''}${r.category} · ${capitalize(r.status)} · Record ${r.id}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (r.amount != null)
+                          Text(
+                            money(r.amount!, r.currency),
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                        const SizedBox(height: 4),
+                        Builder(
+                          builder: (context) {
+                            final delta = r.due
+                                ?.difference(day(DateTime.now()))
+                                .inDays;
+                            return Text(
+                              r.due == null
+                                  ? 'Due date not set'
+                                  : 'Due ${prettyDate(r.due)} · ${delta == 0
+                                        ? 'today'
+                                        : delta! < 0
+                                        ? '${-delta} days overdue'
+                                        : 'in $delta days'}',
+                              style: TextStyle(
+                                color:
+                                    delta != null &&
+                                        delta < 0 &&
+                                        r.status == 'active'
+                                    ? Theme.of(context).colorScheme.error
+                                    : null,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          },
+                        ),
+                        if (r.category == 'Bill' ||
+                            r.category == 'Subscription')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              r.status == 'active'
+                                  ? 'Payment not marked as paid'
+                                  : 'Completion is recorded locally, not verified by your bank',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-                Text(
-                  '${r.flag('demo') ? 'DEMO · ' : ''}${r.category} · ${r.status} · record ${r.id}',
-                ),
-                Text(
-                  'Due ${dateText(r.due)}${r.due == null ? ' not set' : ' · ${r.due!.difference(day(DateTime.now())).inDays} days from today'}',
-                ),
-                if (r.amount != null) Text(money(r.amount!, r.currency)),
-                if (r.category == 'Bill' || r.category == 'Subscription')
-                  Text(
-                    r.status == 'active' ? 'Payment not marked as paid' : 'Completion is recorded locally, not verified by your bank',
-                  ),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
+                  runSpacing: 8,
                   children: [
                     FilledButton(
                       onPressed: busy
@@ -258,7 +304,7 @@ class _RecordDetailsState extends State<RecordDetails> {
                 const SizedBox(height: 18),
                 const Text(
                   'Attachments',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                 ),
                 for (final a in r.attachments)
                   Card(
@@ -358,7 +404,7 @@ class _RecordDetailsState extends State<RecordDetails> {
                 const SizedBox(height: 16),
                 const Text(
                   'Completion history',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                 ),
                 for (final entry
                     in r.data['completionHistory'] as List<dynamic>? ?? [])

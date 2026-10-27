@@ -29,25 +29,28 @@ extension SpendingView on _LifeKeeperState {
     final maximum = max(1, bars.reduce(max));
     final categories = current.map((p) => p['category'] as String).toSet();
     return [
-      const Text(
+      pageHeader(
         'Your spending',
-        style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
-      ),
-      const Text(
         'Only locally marked paid records are counted. Due items, demos and document completions are not spending.',
       ),
       dropdown(
         currency,
         currencies.toList()..sort(),
         (v) => action(() => repo.setting('spendingCurrency', v)),
+        label: 'Currency',
       ),
+      const SizedBox(height: 12),
       card(
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Paid this month: ${money(paid, currency)}',
-              style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.5,
+              ),
             ),
             Text(
               'Budget: ${budget == 0 ? 'not set' : money(budget, currency)}',

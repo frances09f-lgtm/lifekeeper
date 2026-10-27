@@ -291,6 +291,8 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
 
   final navigator = GlobalKey<NavigatorState>();
   final pin = PinSecurity();
+  final bio = BiometricUnlock();
+  bool bioEnabled = false;
   List<AdminRecord> records = [];
   List<Map<String, Object?>> payments = [];
   Map<String, dynamic> settings = {};
@@ -315,6 +317,15 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
     try {
       pinEnabled = widget.enforceLock && await pin.enabled();
       locked = pinEnabled;
+      bioEnabled = await bio.enabled();
+      if (locked &&
+          biometricUnlockAllowed(
+            pinEnabled: pinEnabled,
+            biometricEnabled: bioEnabled,
+            deviceSupports: await bio.deviceSupports(),
+          )) {
+        await unlockWithBiometrics();
+      }
       await widget.notifications?.initialize(
         onResponse: (response) async {
           pendingOpen = int.tryParse(response.payload ?? '');
@@ -409,6 +420,23 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
     pendingOpen = null;
     final r = records.where((r) => r.id == id).firstOrNull;
     if (r != null) details(r);
+  }
+
+  Future<void> unlockWithBiometrics() async {
+    if (!biometricUnlockAllowed(
+      pinEnabled: pinEnabled,
+      biometricEnabled: bioEnabled,
+      deviceSupports: await bio.deviceSupports(),
+    )) return;
+    if (await bio.authenticate()) {
+      pinInput.clear();
+      if (mounted)
+        setState(() {
+          locked = false;
+          pinError = '';
+        });
+      openPending();
+    }
   }
 
   Future<void> unlock() async {
@@ -622,6 +650,14 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                                 child: const Text('Unlock'),
                               ),
                             ),
+                            if (pinEnabled && bioEnabled) ...[
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                onPressed: unlockWithBiometrics,
+                                icon: const Icon(Icons.fingerprint),
+                                label: const Text('Use fingerprint'),
+                              ),
+                            ],
                             const SizedBox(height: 20),
                             Row(
                               mainAxisSize: MainAxisSize.min,

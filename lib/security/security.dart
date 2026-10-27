@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:local_auth/local_auth.dart';
 
 List<int> randomBytes(int count) {
   final random = Random.secure();
@@ -121,5 +122,55 @@ class PinSecurity {
   Future<void> disable(String pin) async {
     if (!await verify(pin)) throw ArgumentError('Incorrect PIN');
     await storage.deleteAll();
+  }
+}
+
+/// Fingerprint/face unlock may only be offered on top of the PIN: it is a
+/// convenience, never a replacement. All three must hold.
+bool biometricUnlockAllowed({
+  required bool pinEnabled,
+  required bool biometricEnabled,
+  required bool deviceSupports,
+}) => pinEnabled && biometricEnabled && deviceSupports;
+
+class BiometricUnlock {
+  final LocalAuthentication auth;
+  final FlutterSecureStorage storage;
+  BiometricUnlock({
+    LocalAuthentication? auth,
+    this.storage = const FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    ),
+  }) : auth = auth ?? LocalAuthentication();
+
+  Future<bool> enabled() async =>
+      await storage.read(key: 'biometricUnlock') == 'true';
+
+  Future<void> setEnabled(bool on) async => on
+      ? await storage.write(key: 'biometricUnlock', value: 'true')
+      : await storage.delete(key: 'biometricUnlock');
+
+  Future<bool> deviceSupports() async {
+    try {
+      return await auth.isDeviceSupported() || await auth.canCheckBiometrics;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// One system prompt. Biometric-only on purpose: the device PIN/pattern
+  /// must never substitute for the app PIN, which stays the fallback.
+  Future<bool> authenticate() async {
+    try {
+      return await auth.authenticate(
+        localizedReason: 'Unlock LifeKeeper',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+    } catch (_) {
+      return false;
+    }
   }
 }

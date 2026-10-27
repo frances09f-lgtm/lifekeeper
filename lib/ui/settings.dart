@@ -190,6 +190,31 @@ extension SettingsView on _LifeKeeperState {
               },
             ),
             if (pinEnabled)
+              SwitchListTile(
+                title: const Text('Fingerprint unlock'),
+                subtitle: const Text('PIN always stays as backup'),
+                value: bioEnabled,
+                onChanged: (v) async {
+                  if (v) {
+                    if (!await bio.deviceSupports()) {
+                      if (context.mounted)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'No fingerprint or face unlock is set up on this phone',
+                            ),
+                          ),
+                        );
+                      return;
+                    }
+                    // Prove possession of the biometric before enabling.
+                    if (!await bio.authenticate()) return;
+                  }
+                  await action(() => bio.setEnabled(v));
+                  if (mounted) refreshState(() => bioEnabled = v);
+                },
+              ),
+            if (pinEnabled)
               TextButton(
                 onPressed: () async {
                   final value = await prompt(

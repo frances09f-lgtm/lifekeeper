@@ -211,7 +211,11 @@ extension SettingsView on _LifeKeeperState {
                     if (!await bio.authenticate()) return;
                   }
                   await action(() => bio.setEnabled(v));
-                  if (mounted) refreshState(() => bioEnabled = v);
+                  // Re-read instead of assuming the write landed: a failed
+                  // storage write must leave the toggle off, never show a
+                  // successful opt-in.
+                  final actual = await bio.enabled();
+                  if (mounted) refreshState(() => bioEnabled = actual);
                 },
               ),
             if (pinEnabled)

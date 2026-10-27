@@ -133,19 +133,33 @@ bool biometricUnlockAllowed({
   required bool deviceSupports,
 }) => pinEnabled && biometricEnabled && deviceSupports;
 
-class BiometricUnlock {
-  final LocalAuthentication auth;
+/// Tiny storage seam so tests can fake a throwing/absent secure storage.
+class BiometricFlagStore {
   final FlutterSecureStorage storage;
-  BiometricUnlock({
-    LocalAuthentication? auth,
+  BiometricFlagStore([
     this.storage = const FlutterSecureStorage(
       aOptions: AndroidOptions(encryptedSharedPreferences: true),
     ),
-  }) : auth = auth ?? LocalAuthentication();
+  ]);
+  Future<String?> read() => storage.read(key: 'biometricUnlock');
+  Future<void> write() => storage.write(key: 'biometricUnlock', value: 'true');
+  Future<void> clear() => storage.delete(key: 'biometricUnlock');
+}
 
+class BiometricUnlock {
+  final LocalAuthentication auth;
+  final BiometricFlagStore flags;
+  BiometricUnlock({
+    LocalAuthentication? auth,
+    BiometricFlagStore? flags,
+  })  : auth = auth ?? LocalAuthentication(),
+        flags = flags ?? BiometricFlagStore();
+
+  /// Fail-closed: any storage trouble reads as "not enabled", so a broken
+  /// store can never surface the biometric path or unlock anything.
   Future<bool> enabled() async {
     try {
-      return await storage.read(key: 'biometricUnlock') == 'true';
+      return await flags.read() == 'true';
     } catch (_) {
       return false;
     }
@@ -154,9 +168,9 @@ class BiometricUnlock {
   Future<void> setEnabled(bool on) async {
     try {
       if (on) {
-        await storage.write(key: 'biometricUnlock', value: 'true');
+        await flags.write();
       } else {
-        await storage.delete(key: 'biometricUnlock');
+        await flags.clear();
       }
     } catch (_) {
       // No secure storage (or a test environment): stay disabled.

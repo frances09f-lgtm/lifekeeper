@@ -7,7 +7,11 @@ class BillDraft {
 }
 
 DateTime? billDate(String value, DateTime now) {
-  value = value.trim().toLowerCase().replaceAll(',', '');
+  value = value
+      .trim()
+      .toLowerCase()
+      .replaceAll(',', '')
+      .replaceAll(RegExp(r'(\d+)(?:st|nd|rd|th)\b'), r'$1');
   final iso = strictDate(value);
   if (iso != null) return iso;
   final numeric = RegExp(r'^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})$')
@@ -26,7 +30,28 @@ DateTime? billDate(String value, DateTime now) {
   final named = RegExp(
     r'^(\d{1,2})\s*[- /]?\s*([a-z]{3,9})(?:\s*[- /]?\s*(\d{4}))?$',
   ).firstMatch(value);
-  if (named == null) return null;
+
+  String? dayPart;
+  String? monthPart;
+  String? yearPart;
+
+  if (named != null) {
+    dayPart = named[1];
+    monthPart = named[2];
+    yearPart = named[3];
+  } else {
+    final monthFirst = RegExp(
+      r'^([a-z]{3,9})\s*[- /]?\s*(\d{1,2})(?:\s*[- /]?\s*(\d{4}))?$',
+    ).firstMatch(value);
+    if (monthFirst != null) {
+      monthPart = monthFirst[1];
+      dayPart = monthFirst[2];
+      yearPart = monthFirst[3];
+    } else {
+      return null;
+    }
+  }
+
   const months = [
     'jan',
     'feb',
@@ -41,16 +66,16 @@ DateTime? billDate(String value, DateTime now) {
     'nov',
     'dec',
   ];
-  final m = months.indexOf(named[2]!.substring(0, 3)) + 1;
+  final m = months.indexOf(monthPart!.substring(0, 3)) + 1;
   if (m == 0) return null;
-  final y = named[3] == null ? now.year : int.parse(named[3]!);
+  final y = yearPart == null ? now.year : int.parse(yearPart);
   final result = strictDate(
-    '$y-${m.toString().padLeft(2, '0')}-${named[1]!.padLeft(2, '0')}',
+    '$y-${m.toString().padLeft(2, '0')}-${dayPart!.padLeft(2, '0')}',
   );
   if (result == null) return null;
-  return named[3] == null && result.isBefore(day(now))
+  return yearPart == null && result.isBefore(day(now))
       ? strictDate(
-          '${y + 1}-${m.toString().padLeft(2, '0')}-${named[1]!.padLeft(2, '0')}',
+          '${y + 1}-${m.toString().padLeft(2, '0')}-${dayPart.padLeft(2, '0')}',
         )
       : result;
 }
@@ -81,8 +106,9 @@ BillDraft parseBill(String text, DateTime now, {bool quick = false}) {
     fields['amount'] = amounts.single;
   else if (amounts.length > 1)
     warnings.add('Conflicting totals, enter the amount');
+
   final dueMatches = RegExp(
-    r'(?:due\s*date|pay\s*by|payment\s*due(?:\s*date)?)\s*[:=-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-](?:\d{4}|\d{2})|\d{1,2}\s*[- /]?\s*[A-Za-z]{3,9}\s*[- /]?\s*\d{4})',
+    r'(?:due\s*date|pay\s*by|payment\s*due(?:\s*date)?)\s*[:=-]?\s*(\d{4}-\d{2}-\d{2}|\d{1,2}[/-]\d{1,2}[/-](?:\d{4}|\d{2})|\d{1,2}(?:st|nd|rd|th)?\s*[- /]?\s*[A-Za-z]{3,9}\s*[- /]?\s*\d{4}|[A-Za-z]{3,9}\s*[- /]?\s*\d{1,2}(?:st|nd|rd|th)?\s*[- /]?\s*\d{4})',
     caseSensitive: false,
   ).allMatches(text).toList();
   final dates = dueMatches
@@ -94,21 +120,25 @@ BillDraft parseBill(String text, DateTime now, {bool quick = false}) {
     fields['due'] = dates.single;
   else if (dueMatches.isNotEmpty)
     warnings.add('Ambiguous or conflicting due date, enter it');
+
   final account = RegExp(
     r'(?:consumer|account|customer)\s*(?:number|no\.?|id|#)\s*[:=-]?\s*([A-Za-z0-9][A-Za-z0-9/-]{3,})',
     caseSensitive: false,
   ).firstMatch(text);
   if (account != null) fields['account'] = account[1];
+
   final period = RegExp(
     r'bill\s*period\s*[:=-]?\s*([^\r\n]+)',
     caseSensitive: false,
   ).firstMatch(text);
   if (period != null) fields['billPeriod'] = period[1];
+
   final upi = RegExp(r'\b[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}\b').firstMatch(text);
   if (upi != null) fields['upi'] = upi[0];
+
   if (quick) {
     final m = RegExp(
-      r'^(.+?)\s+(\d+(?:\.\d{1,2})?)\s+(?:on|due)\s+(\d{1,2}\s+[a-zA-Z]{3,9}(?:\s+\d{4})?)(?:\s+(daily|weekly|monthly|yearly))?$',
+      r'^(.+?)\s+(\d+(?:\.\d{1,2})?)\s+(?:on|due)\s+(\d{1,2}(?:st|nd|rd|th)?\s+[a-zA-Z]{3,9}(?:\s+\d{4})?|[a-zA-Z]{3,9}\s+\d{1,2}(?:st|nd|rd|th)?(?:\s+\d{4})?)(?:\s+(daily|weekly|monthly|yearly))?$',
       caseSensitive: false,
     ).firstMatch(text.trim());
     if (m != null) {

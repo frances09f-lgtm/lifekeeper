@@ -15,6 +15,7 @@ void main() {
     r = r.copy({'due': dateText(r.nextDue())});
     expect(dateText(r.nextDue()), '2025-03-31');
   });
+
   test('Leap year anchor returns to February 29', () {
     var r = AdminRecord({
       'due': '2024-02-29',
@@ -28,6 +29,7 @@ void main() {
       r = r.copy({'due': dateText(next)});
     }
   });
+
   test('Daily weekly and custom intervals', () {
     expect(
       dateText(AdminRecord({'due': '2026-10-31', 'repeat': 'daily'}).nextDue()),
@@ -48,11 +50,13 @@ void main() {
       '2026-11-10',
     );
   });
+
   test('Strict date rejects normalized invalid day', () {
     expect(strictDate('2026-02-30'), isNull);
     expect(strictDate('2024-02-29'), DateTime(2024, 2, 29));
     expect(strictDate('01/02/2026'), isNull);
   });
+
   test('Currency minor units and precision', () {
     expect(minorAmount('1,299.95'), 129995);
     expect(minorAmount('1.234', currency: 'KWD'), 1234);
@@ -61,6 +65,7 @@ void main() {
     expect(minorAmount('abc'), isNull);
     expect(minorAmount('120', currency: 'JPY'), 120);
   });
+
   test('OCR explicitly labeled due and total', () {
     final d = parseBill(
       'MSEB\nAmount due: Rs. 1,299.50\nDue date: 25/11/2026\nConsumer no: 12345678',
@@ -70,6 +75,7 @@ void main() {
     expect(d.fields['due'], '2026-11-25');
     expect(d.fields['account'], '12345678');
   });
+
   test('Invoice date is never used as due date', () {
     final d = parseBill(
       'Bill\nInvoice date: 2026-11-25\nAmount due: 500',
@@ -77,6 +83,7 @@ void main() {
     );
     expect(d.fields['due'], isNull);
   });
+
   test('Ambiguous numeric dates and conflicting totals stay blank', () {
     final d = parseBill(
       'Bill\nDue date: 05/11/2026\nAmount due: 500\nGrand total: 600',
@@ -86,6 +93,7 @@ void main() {
     expect(d.fields['amount'], isNull);
     expect(d.warnings, isNotEmpty);
   });
+
   test('Named Indian date and quick add rule', () {
     final d = parseBill(
       'jio bill 799 on 5 nov monthly',
@@ -97,12 +105,33 @@ void main() {
     expect(d.fields['due'], '2026-11-05');
     expect(d.fields['repeat'], 'monthly');
   });
+
+  test('Named date handles ordinals and month-first formats', () {
+    expect(
+      billDate('25th Nov 2026', DateTime(2026, 10, 24)),
+      DateTime(2026, 11, 25),
+    );
+    expect(
+      billDate('November 25 2026', DateTime(2026, 10, 24)),
+      DateTime(2026, 11, 25),
+    );
+    expect(
+      billDate('5th nov', DateTime(2026, 10, 24)),
+      DateTime(2026, 11, 5),
+    );
+    expect(
+      billDate('Nov 5th', DateTime(2026, 10, 24)),
+      DateTime(2026, 11, 5),
+    );
+  });
+
   test('Missing and invalid dates are not invented', () {
     expect(billDate('31 February 2026', DateTime(2026)), isNull);
     final d = parseBill('Unclear image', DateTime(2026));
     expect(d.fields['amount'], isNull);
     expect(d.fields['due'], isNull);
   });
+
   test('Money does not change urgency', () {
     final a = AdminRecord({'due': '2026-10-20', 'amount': 1});
     final b = a.copy({'amount': 999999999});
@@ -111,6 +140,7 @@ void main() {
       priority(b, DateTime(2026, 10, 24)).score,
     );
   });
+
   test('Grace, dependencies and manual weights explain priority', () {
     final r = AdminRecord({
       'title': 'policy',
@@ -127,6 +157,7 @@ void main() {
     expect(score.score, greaterThan(50));
     expect(priority(r.copy({'priorityOverride': 9}), DateTime(2026)).score, 9);
   });
+
   test('Radar excludes archived and dismissed records', () {
     expect(
       radar([
@@ -136,6 +167,7 @@ void main() {
       isEmpty,
     );
   });
+
   test('Quiet hours rollover and inclusive start exclusive end', () {
     expect(
       quietAdjusted(DateTime(2026, 10, 24, 22), 1320, 480),
@@ -154,6 +186,7 @@ void main() {
       DateTime(2026, 10, 24, 15),
     );
   });
+
   test('Stable unique reminder IDs and completed cancellation', () {
     final r = AdminRecord({
       'title': 'x',
@@ -182,6 +215,7 @@ void main() {
       isEmpty,
     );
   });
+
   test('Snooze replaces scheduled dues and disabled clears all', () {
     final r = AdminRecord({
       'title': 'x',

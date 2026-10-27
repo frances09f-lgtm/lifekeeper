@@ -29,13 +29,59 @@ extension SettingsView on _LifeKeeperState {
       pageHeader('Settings', 'Appearance, reminders, security and backups.'),
       title('Appearance'),
       card(
-        dropdown(settings['theme'] as String? ?? 'system', [
-          'system',
-          'light',
-          'dark',
-        ], (v) => action(() => repo.setting('theme', v))),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            dropdown(
+              themeLabel(settings['theme'] as String? ?? 'system'),
+              const ['System', 'Light', 'Dark', 'True black'],
+              (v) => action(
+                () => repo.setting('theme', switch (v) {
+                  'Light' => 'light',
+                  'Dark' => 'dark',
+                  'True black' => 'black',
+                  _ => 'system',
+                }),
+              ),
+              label: 'Theme',
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'True black uses a pure black dark mode, easier on OLED screens.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+      title('Budget period'),
+      card(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            dropdown(
+              paydayLabel((settings['payday'] as num?)?.toInt()),
+              [
+                'Calendar month',
+                for (var d = 2; d <= 28; d++) 'Payday: day $d',
+              ],
+              (v) => action(
+                () => repo.setting(
+                  'payday',
+                  v == 'Calendar month' ? null : int.parse(v.split(' ').last),
+                ),
+              ),
+              label: 'Month starts on',
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Home and Insights totals follow your pay cycle when a payday is set.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
       ),
       title('Notifications'),
+      notificationPreview(context),
       card(
         Column(
           children: [
@@ -241,6 +287,11 @@ extension SettingsView on _LifeKeeperState {
               label: const Text('Password-encrypted export'),
             ),
             TextButton.icon(
+              onPressed: () => exportCsv(context),
+              icon: const Icon(Icons.table_view_outlined),
+              label: const Text('Export payment history (CSV)'),
+            ),
+            TextButton.icon(
               onPressed: () => restoreBackup(context),
               icon: const Icon(Icons.restore),
               label: const Text('Restore encrypted backup'),
@@ -293,10 +344,108 @@ extension SettingsView on _LifeKeeperState {
       title('About'),
       card(
         const Text(
-          'LifeKeeper 1.0.1\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
+          'LifeKeeper 1.1.0\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
         ),
       ),
     ];
+  }
+
+  Widget notificationPreview(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final minute = (settings['reminderTime'] as num?)?.toInt() ?? 540;
+    final next = nextPayments(records, DateTime.now(), limit: 1);
+    final sample = next.isEmpty ? null : next.first.record;
+    final hh = (minute ~/ 60).toString().padLeft(2, '0');
+    final mm = (minute % 60).toString().padLeft(2, '0');
+    Widget actionText(String t) => Padding(
+      padding: const EdgeInsets.only(right: 20),
+      child: Text(
+        t,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        key: const Key('notification-preview'),
+        decoration: BoxDecoration(
+          color: dark ? const Color(0xff1c1f1d) : const Color(0xffeef1ef),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const LkLogo(size: 18),
+                const SizedBox(width: 8),
+                Text('LifeKeeper · $hh:$mm', style: theme.textTheme.bodySmall),
+                const Spacer(),
+                Text('Preview', style: theme.textTheme.labelSmall),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              sample?.title ?? 'Jio postpaid',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              sample == null
+                  ? 'Due today · ₹799 · Payment not marked as paid'
+                  : 'Due ${prettyDate(sample.due)}${sample.amount == null ? '' : ' · ${rupees(sample.amount!, sample.currency)}'} · Payment not marked as paid',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                actionText('Mark as paid'),
+                actionText('Remind me tomorrow'),
+                actionText('Open'),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Arrives at your reminder time. If a payment stays unpaid, it repeats once a day for up to 7 days. Mark as paid records the payment without opening the app.',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String themeLabel(String v) => switch (v) {
+    'light' => 'Light',
+    'dark' => 'Dark',
+    'black' => 'True black',
+    _ => 'System',
+  };
+
+  String paydayLabel(int? day) => day == null || day <= 1
+      ? 'Calendar month'
+      : 'Payday: day ${day.clamp(2, 28)}';
+
+  Future<void> exportCsv(BuildContext context) async {
+    await action(() async {
+      final csv = paymentsCsv(await repo.payments());
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save LifeKeeper payment history',
+        fileName: 'LifeKeeper-payments-${dateText(DateTime.now())}.csv',
+        bytes: Uint8List.fromList(utf8.encode(csv)),
+      );
+      if (path != null && context.mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment history saved as CSV')),
+        );
+    });
   }
 
   Future<void> backup(BuildContext context) async {

@@ -65,9 +65,12 @@ List<PlannedAlert> planReminders(
         'Due ${dateText(due)}${r.category == 'Bill' || r.category == 'Subscription' ? ' · Payment not marked as paid' : ''}',
       );
     }
-    for (var i = 1; i <= 3; i++) {
+    // Unpaid items keep reminding once a day for up to a week after the due
+    // date (the due-day reminder plus six daily repeats).
+    const repeatSlots = [9, 10, 11, 8, 14, 15];
+    for (var i = 1; i <= repeatSlots.length; i++) {
       add(
-        8 + i,
+        repeatSlots[i - 1],
         DateTime(
           due.year,
           due.month,
@@ -75,7 +78,7 @@ List<PlannedAlert> planReminders(
           recordMinute ~/ 60,
           recordMinute % 60,
         ),
-        'Due date passed, review status',
+        'Still unpaid · due ${dateText(due)}. Mark as paid or remind me tomorrow',
       );
     }
     if (r.date('trialEnd') != null) {
@@ -124,3 +127,12 @@ List<PlannedAlert> planReminders(
   alerts.sort((a, b) => a.at.compareTo(b.at));
   return alerts;
 }
+
+/// "Remind me tomorrow": the next day at the reminder minute of day.
+DateTime remindTomorrowAt(DateTime now, int minuteOfDay) => DateTime(
+  now.year,
+  now.month,
+  now.day + 1,
+  minuteOfDay ~/ 60,
+  minuteOfDay % 60,
+);

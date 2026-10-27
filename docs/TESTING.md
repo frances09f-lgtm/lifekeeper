@@ -14,6 +14,15 @@ CI must pass fatal analyze, meaningful rule/recurrence/reminder/repository/backu
 - Attachment preview/rename/replace/delete and extracted text search. PDFs use installed PDF viewer after confirmation. PDF text is not automatically OCR-extracted. Attach bill scans for searchable OCR text.
 - UPI review validates INR amount/payee; app return never marks paid. Subscription cancel tracking never cancels provider.
 
+## 1.1.0 checks (Subby-style Home and Insights)
+- Home total card: month (or payday period) total, per day, paid vs left bar, change vs last period. Paid counts only locally marked payments; left counts unpaid dues in the period plus older overdue ones.
+- Alerts: trial ending within 7 days (Keep it), overdue (Mark paid / Mark all paid), recent price change (Keep it). Each action hides the alert.
+- Next payments carousel Mark paid creates exactly one payment per occurrence.
+- Notification actions Mark as paid and Remind me tomorrow (next day at the reminder time). Unpaid items repeat once a day for up to 7 days from the due date; quiet hours still apply. Needs device validation.
+- Insights Overview, Trends (12-month bars, 6 months ahead, 12-week renewal heatmap, price changes), Services (total paid per item), Signals (price change, not marked paid, two payments within 3 days) and Cancel in time trials.
+- Settings: payday budget period, CSV export of payment history (formula-safe), True black theme.
+- Brand marks are bundled colours and initials. No logo downloads, no internet.
+
 ## Honest limits
 - Database and attachments are app-private but are not encrypted at rest by this app. Android device encryption depends on the device. PIN is a screen lock, PBKDF2 salted hash lives in secure storage. Exports are AES-256-GCM authenticated encryption with PBKDF2.
 - Biometric unlock is not included. Widget is an in-app preview only. SMS demo parses pasted/sample text only, no SMS permission. Bundled Latin ML Kit OCR is the only scanning model; no LLM, cloud, account, backend or language controls.

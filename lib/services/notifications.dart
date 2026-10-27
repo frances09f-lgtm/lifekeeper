@@ -32,6 +32,17 @@ Future<void> applyNotificationAction(
   final id = int.tryParse(response.payload ?? '');
   if (id == null) return;
   if (response.actionId == 'complete') await repo.complete(id);
+  if (response.actionId == 'tomorrow') {
+    final settings = await repo.settings();
+    final record = await repo.get(id);
+    final minute =
+        record?.number(
+          'reminderMinute',
+          (settings['reminderTime'] as num?)?.toInt() ?? 540,
+        ) ??
+        540;
+    await repo.snoozeUntil(id, remindTomorrowAt(DateTime.now(), minute));
+  }
   if (response.actionId == 'snooze')
     await repo.snooze(
       id,
@@ -107,8 +118,8 @@ class NotificationService {
           playSound: settings['sound'] != false,
           enableVibration: settings['vibration'] != false,
           actions: const [
-            AndroidNotificationAction('complete', 'Complete'),
-            AndroidNotificationAction('snooze', 'Snooze'),
+            AndroidNotificationAction('complete', 'Mark as paid'),
+            AndroidNotificationAction('tomorrow', 'Remind me tomorrow'),
             AndroidNotificationAction('open', 'Open', showsUserInterface: true),
           ],
         ),

@@ -177,6 +177,15 @@ class Repository {
       });
   }
 
+  Future<void> snoozeUntil(int id, DateTime until) async {
+    final r = await get(id);
+    if (r != null)
+      await patch(id, {
+        'snoozeUntil': until.toIso8601String(),
+        'snoozeCount': r.number('snoozeCount') + 1,
+      });
+  }
+
   Future<void> reopen(int id) async {
     await patch(id, {'status': 'active', 'snoozeUntil': ''});
   }

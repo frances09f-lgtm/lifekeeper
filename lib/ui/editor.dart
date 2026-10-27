@@ -45,7 +45,8 @@ class _RecordEditorState extends State<RecordEditor> {
     'billPeriod': 'Bill period',
     'upi': 'UPI ID',
     'customerCare': 'Customer care',
-    'trialEnd': 'Trial end YYYY-MM-DD',
+    'trialEnd': 'Free trial ends YYYY-MM-DD (optional)',
+    'priceAfterTrialInput': 'Price after trial (optional)',
     'interval': 'Repeat interval (custom uses days)',
     'importance': 'Importance 0 to 3',
     'priorityOverride': 'Priority override 0 to 100 (optional)',
@@ -68,6 +69,16 @@ class _RecordEditorState extends State<RecordEditor> {
     reminders = widget.record?.reminders.toSet() ?? {7, 3, 1, 0};
     for (final key in fields.keys) {
       var value = original[key]?.toString() ?? '';
+      if (key == 'priceAfterTrialInput')
+        value = original['priceAfterTrial'] is num
+            ? ((original['priceAfterTrial'] as num).toInt() /
+                      currencyScale(original['currency'] as String? ?? 'INR'))
+                  .toStringAsFixed(
+                    currencyScale(original['currency'] as String? ?? 'INR') == 1
+                        ? 0
+                        : 2,
+                  )
+            : '';
       if (key == 'amountInput')
         value = original['amount'] == null
             ? ''
@@ -167,11 +178,17 @@ class _RecordEditorState extends State<RecordEditor> {
           : minorAmount(value('amountInput'), currency: currency);
       if (value('amountInput').isNotEmpty && amount == null)
         throw ArgumentError('Invalid amount for $currency');
+      final afterTrial = value('priceAfterTrialInput').isEmpty
+          ? null
+          : minorAmount(value('priceAfterTrialInput'), currency: currency);
+      if (value('priceAfterTrialInput').isNotEmpty && afterTrial == null)
+        throw ArgumentError('Invalid price after trial for $currency');
       final data = <String, dynamic>{
         ...original,
         for (final key in fields.keys.where(
           (k) => ![
             'amountInput',
+            'priceAfterTrialInput',
             'interval',
             'importance',
             'priorityOverride',
@@ -183,6 +200,7 @@ class _RecordEditorState extends State<RecordEditor> {
           key: value(key),
         'currency': currency,
         'amount': amount,
+        'priceAfterTrial': afterTrial,
         'repeat': repeat,
         'interval': int.parse(value('interval')),
         'importance': int.parse(value('importance')),

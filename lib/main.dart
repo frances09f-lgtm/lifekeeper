@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -13,6 +14,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'data/repository.dart';
 import 'domain/record.dart';
 import 'domain/spending.dart';
+import 'domain/insights.dart';
 import 'domain/bill_rules.dart';
 import 'security/security.dart';
 import 'services/notifications.dart';
@@ -21,6 +23,8 @@ part 'ui/editor.dart';
 part 'ui/details.dart';
 part 'ui/settings.dart';
 part 'ui/spending.dart';
+part 'ui/home.dart';
+part 'ui/insights.dart';
 
 @pragma('vm:entry-point')
 void systemReconcile() async {
@@ -72,14 +76,27 @@ class LkColors {
   static const dangerDark = Color(0xfff0a397);
 }
 
-ThemeData lifeTheme(Brightness brightness) {
+ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
   final dark = brightness == Brightness.dark;
+  final black = dark && trueBlack;
   final accent = dark ? LkColors.accentDark : LkColors.accent;
-  final line = dark ? LkColors.lineDark : LkColors.line;
+  final line = black
+      ? const Color(0xff262626)
+      : dark
+      ? LkColors.lineDark
+      : LkColors.line;
   final ink = dark ? LkColors.inkDark : LkColors.ink;
   final muted = dark ? LkColors.mutedDark : LkColors.muted;
-  final surface = dark ? LkColors.surfaceDark : Colors.white;
-  final canvas = dark ? LkColors.canvasDark : LkColors.canvas;
+  final surface = black
+      ? const Color(0xff111111)
+      : dark
+      ? LkColors.surfaceDark
+      : Colors.white;
+  final canvas = black
+      ? Colors.black
+      : dark
+      ? LkColors.canvasDark
+      : LkColors.canvas;
   final scheme =
       ColorScheme.fromSeed(
         seedColor: LkColors.accent,
@@ -299,6 +316,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
   bool loading = true, busy = false, locked = true, pinEnabled = false;
   String? error;
   int tab = 0;
+  String insightsTab = 'Overview';
   int? pendingOpen;
   final pinInput = TextEditingController();
   String pinError = '';
@@ -317,7 +335,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
     try {
       pinEnabled = widget.enforceLock && await pin.enabled();
       locked = pinEnabled;
-      bioEnabled = await bio.enabled();
+      bioEnabled = widget.enforceLock && await bio.enabled();
       if (locked &&
           biometricUnlockAllowed(
             pinEnabled: pinEnabled,
@@ -427,7 +445,8 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       pinEnabled: pinEnabled,
       biometricEnabled: bioEnabled,
       deviceSupports: await bio.deviceSupports(),
-    )) return;
+    ))
+      return;
     if (await bio.authenticate()) {
       pinInput.clear();
       if (mounted)
@@ -579,8 +598,11 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       title: 'LifeKeeper',
       debugShowCheckedModeBanner: false,
       theme: lifeTheme(Brightness.light),
-      darkTheme: lifeTheme(Brightness.dark),
-      themeMode: settings['theme'] == 'dark'
+      darkTheme: lifeTheme(
+        Brightness.dark,
+        trueBlack: settings['theme'] == 'black',
+      ),
+      themeMode: settings['theme'] == 'dark' || settings['theme'] == 'black'
           ? ThemeMode.dark
           : settings['theme'] == 'light'
           ? ThemeMode.light
@@ -719,7 +741,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                   [
                     'LifeKeeper',
                     'Calendar',
-                    'Spending',
+                    'Insights',
                     'Vault',
                     'Settings',
                   ][tab],
@@ -746,13 +768,14 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                   child: RefreshIndicator(
                     onRefresh: reload,
                     child: ListView(
+                      key: PageStorageKey<String>('tab-$tab'),
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 112),
                       children: tab == 0
                           ? home(context)
                           : tab == 1
                           ? calendar()
                           : tab == 2
-                          ? spending(context)
+                          ? insights(context)
                           : tab == 3
                           ? vault(context)
                           : preferences(context),
@@ -789,7 +812,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                 NavigationDestination(
                   icon: Icon(Icons.insights_outlined),
                   selectedIcon: Icon(Icons.insights_rounded),
-                  label: 'Spending',
+                  label: 'Insights',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.folder_outlined),
@@ -1163,290 +1186,6 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
         );
       },
     );
-  }
-
-  List<Widget> home(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final now = day(DateTime.now());
-    final active = records.where((r) => r.status == 'active').toList();
-    final ranked = radar(
-      records,
-      DateTime.now(),
-      weights: Map<String, dynamic>.from(settings['weights'] as Map? ?? {}),
-    );
-    int count(int days) => active
-        .where(
-          (r) =>
-              r.due != null &&
-              !r.due!.isBefore(now) &&
-              r.due!.isBefore(now.add(Duration(days: days))),
-        )
-        .length;
-    final overdueCount = active
-        .where((r) => r.due?.isBefore(now) ?? false)
-        .length;
-    final visible = records
-        .where(
-          (r) =>
-              (status == 'All' || r.status == status) &&
-              (category == 'All' || r.category == category) &&
-              (search.isEmpty ||
-                  r.data.values
-                      .join(' ')
-                      .toLowerCase()
-                      .contains(search.toLowerCase())),
-        )
-        .toList();
-    if (sort == 'Title')
-      visible.sort((a, b) => a.title.compareTo(b.title));
-    else if (sort == 'Priority')
-      visible.sort(
-        (a, b) => priority(
-          b,
-          DateTime.now(),
-        ).score.compareTo(priority(a, DateTime.now()).score),
-      );
-    else
-      visible.sort(
-        (a, b) => (a.due ?? DateTime(2200)).compareTo(b.due ?? DateTime(2200)),
-      );
-    List<AdminRecord> dueOn(DateTime d) =>
-        active.where((r) => r.text('due') == dateText(d)).toList();
-    final upcoming = [...active]
-      ..sort(
-        (a, b) => (a.due ?? DateTime(2200)).compareTo(b.due ?? DateTime(2200)),
-      );
-    final overlaps = active
-        .map((r) => r.text('due'))
-        .where((d) => d.isNotEmpty)
-        .toSet()
-        .where((d) => active.where((r) => r.text('due') == d).length > 1)
-        .toList();
-    return [
-      pageHeader(
-        'Your admin, handled',
-        'Bills, renewals and warranties. All on this phone.',
-        eyebrow: longDate(now),
-      ),
-      heroCard(context, ranked.length, overdueCount),
-      const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: statTile(
-              '$overdueCount',
-              'Overdue',
-              alert: overdueCount > 0,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(child: statTile('${count(7)}', 'This week')),
-          const SizedBox(width: 10),
-          Expanded(child: statTile('${count(30)}', 'This month')),
-        ],
-      ),
-      const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: FilledButton.icon(
-              onPressed: scan,
-              icon: const Icon(Icons.document_scanner_outlined, size: 20),
-              label: const Text('Scan bill'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: quick,
-              icon: const Icon(Icons.bolt_rounded, size: 20),
-              label: const Text('Quick add'),
-            ),
-          ),
-        ],
-      ),
-      title(
-        'Needs attention',
-        trailing: ranked.isEmpty ? null : '${ranked.length} items',
-      ),
-      if (ranked.isEmpty)
-        card(
-          Row(
-            children: [
-              Icon(Icons.check_circle_outline_rounded, color: scheme.primary),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'All clear. Add a bill, document or renewal to get started.',
-                ),
-              ),
-            ],
-          ),
-        ),
-      for (final r in ranked.take(3)) tile(r.record, result: r),
-      title('Next 7 days'),
-      Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            for (var i = 0; i < 7; i++) ...[
-              if (i > 0) const Divider(),
-              InkWell(
-                onTap: () => setState(() {
-                  selected = now.add(Duration(days: i));
-                  month = DateTime(selected.year, selected.month);
-                  tab = 1;
-                }),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 92,
-                        child: Text(
-                          i == 0
-                              ? 'Today'
-                              : i == 1
-                              ? 'Tomorrow'
-                              : shortDay(now.add(Duration(days: i))),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          dueOn(now.add(Duration(days: i))).isEmpty
-                              ? 'No due items'
-                              : dueOn(now.add(Duration(days: i)))
-                                    .map((r) => r.title)
-                                    .join(', '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: dueOn(now.add(Duration(days: i))).isEmpty
-                              ? theme.textTheme.bodySmall
-                              : theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-      title('Ask LifeKeeper'),
-      TextField(
-        decoration: const InputDecoration(
-          hintText: 'Search your records',
-          prefixIcon: Icon(Icons.search_rounded, size: 20),
-        ),
-        onChanged: (v) => setState(() => search = v),
-      ),
-      Padding(
-        padding: const EdgeInsets.only(top: 8, left: 4),
-        child: Text(
-          '${active.length} active items · ${records.where((r) => r.category == 'Warranty').length} warranties · Local keyword search, no AI model',
-          style: theme.textTheme.bodySmall,
-        ),
-      ),
-      title('Widget preview', trailing: 'Preview only'),
-      card(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Not a phone home-screen widget',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            if (upcoming.isEmpty)
-              const Text('Nothing upcoming')
-            else
-              for (final r in upcoming.take(3))
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          r.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        r.due == null ? 'No date' : prettyDate(r.due),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-          ],
-        ),
-      ),
-      if (active.any((r) => r.dependencies.isNotEmpty) ||
-          overlaps.isNotEmpty) ...[
-        title('Dependencies and overlaps'),
-        card(
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final r in active.where((r) => r.dependencies.isNotEmpty))
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Text(
-                    '${r.title} depends on ${r.dependencies.map((id) => records.where((x) => x.id == id).firstOrNull?.title ?? 'missing record').join(', ')}',
-                  ),
-                ),
-              for (final d in overlaps)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Text(
-                    '${prettyDate(strictDate(d))}: ${active.where((r) => r.text('due') == d).map((r) => r.title).join(', ')}',
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-      title('All records', trailing: '${visible.length} shown'),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            dropdown(
-              category,
-              ['All', ...records.map((r) => r.category).toSet()],
-              (v) => setState(() => category = v),
-              label: 'Category',
-            ),
-            const SizedBox(width: 8),
-            dropdown(
-              status,
-              ['All', 'active', 'completed', 'archived'],
-              (v) => setState(() => status = v),
-              label: 'Status',
-            ),
-            const SizedBox(width: 8),
-            dropdown(
-              sort,
-              ['Due date', 'Title', 'Priority'],
-              (v) => setState(() => sort = v),
-              label: 'Sort',
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 12),
-      if (visible.isEmpty) card(const Text('No records match these filters')),
-      for (final r in visible) tile(r),
-    ];
   }
 
   Widget dropdown(

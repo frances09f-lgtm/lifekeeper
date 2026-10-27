@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LifeKeeper</title>
+<style>
+:root{
+  --bg:#f6f7f8; --card:#fff; --line:#e7e9ec; --text:#16181c; --muted:#6b7178;
+  --accent:#0e7a5f; --accent-soft:#e9f3ef;
+  --red:#c4372c; --red-soft:#fcecea;
+  --amber:#9a5b0b; --amber-soft:#fbf1e2;
+  --ok:#1c7c4e; --ok-soft:#e9f4ee;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e9eaec;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:100px}
+header{padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:9px}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px}
+.brand h1{font-size:19px;font-weight:650;letter-spacing:-.2px}
+.brand p{font-size:12px;color:var(--muted);margin-top:1px}
+.badge{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 9px;background:#fff;white-space:nowrap}
+main{padding:0 14px}
+.view{display:none}
+.view.on{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.sect{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin:18px 6px 8px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+.tile b{display:block;font-size:20px;font-weight:650;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.tile span{font-size:11px;color:var(--muted)}
+.tile.hot b{color:var(--red)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer}
+.row:active{background:#f3f4f5}
+.row+.row{border-top:1px solid var(--line)}
+.ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none;font-size:15px}
+.ic.bill{background:var(--accent-soft);color:var(--accent)}
+.ic.ren{background:#eef1fd;color:#3b51b5}
+.ic.war{background:#fdf1ee;color:#a4442b}
+.r-main{flex:1;min-width:0}
+.r-main b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r-main span{font-size:12px;color:var(--muted)}
+.r-end{text-align:right;flex:none}
+.r-end b{display:block;font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-size:10.5px;font-weight:600;border-radius:999px;padding:2.5px 8px;margin-top:3px}
+.chip.overdue{background:var(--red-soft);color:var(--red)}
+.chip.due{background:var(--amber-soft);color:var(--amber)}
+.chip.active{background:var(--ok-soft);color:var(--ok)}
+.chip.expired{background:#f0f1f2;color:var(--muted)}
+.chip.paid{background:var(--ok-soft);color:var(--ok)}
+.search{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.search input{border:0;outline:0;background:none;flex:1;font-size:14px;color:var(--text)}
+.chips{display:flex;gap:7px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.fchip{flex:none;font-size:12.5px;font-weight:550;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:6.5px 13px;cursor:pointer}
+.fchip.on{background:var(--text);color:#fff;border-color:var(--text)}
+.calhead{display:flex;align-items:center;justify-content:space-between;padding:2px 6px 10px}
+.calhead b{font-size:15px;font-weight:600}
+.navbtn{width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:15px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+.dow{font-size:10.5px;color:var(--muted);text-align:center;padding:4px 0;font-weight:600}
+.day{position:relative;text-align:center;font-size:13px;padding:9px 0;border-radius:9px;cursor:pointer;font-variant-numeric:tabular-nums}
+.day.today{background:var(--accent);color:#fff;font-weight:600}
+.day.sel{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.dot{position:absolute;left:50%;transform:translateX(-50%);bottom:3px;width:4.5px;height:4.5px;border-radius:50%}
+.dot.r{background:var(--red)}.dot.a{background:var(--amber)}.dot.g{background:#9fd3bd}
+.day.today .dot{background:#fff}
+.spent{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:10px}
+.spent .lbl{font-size:12px;color:var(--muted)}
+.spent .big{font-size:26px;font-weight:650;letter-spacing:-.4px;font-variant-numeric:tabular-nums;margin-top:2px}
+.bar{height:6px;border-radius:3px;background:#eef0f1;margin-top:14px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.leg{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.fab{position:fixed;bottom:86px;left:50%;transform:translateX(-50%);width:calc(100% - 40px);max-width:390px;background:var(--accent);color:#fff;border:0;border-radius:16px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 8px 24px rgba(14,122,95,.28);z-index:6}
+.tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;z-index:7}
+.tabbar .inner{pointer-events:auto;display:flex;width:100%;max-width:430px;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:8px 6px calc(10px + env(safe-area-inset-bottom))}
+.tab{flex:1;background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10.5px;font-weight:550;padding:4px 0}
+.tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--accent)}
+.sheet{position:fixed;inset:0;z-index:20;display:none}
+.sheet.open{display:block}
+.sheet .veil{position:absolute;inset:0;background:rgba(16,20,18,.4)}
+.sheet .panel{position:absolute;bottom:0;left:0;right:0;max-width:430px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;padding:10px 20px calc(22px + env(safe-area-inset-bottom));max-height:86vh;overflow:auto}
+.grab{width:36px;height:4px;border-radius:2px;background:#e2e4e7;margin:2px auto 14px}
+.sheet h3{font-size:17px;font-weight:650;margin-bottom:2px}
+.sheet .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f1f2;font-size:13.5px}
+.kv span{color:var(--muted)}
+.kv b{font-weight:600;font-variant-numeric:tabular-nums}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;padding:13px;border-radius:13px;border:0;font-size:14.5px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.ghost{background:#f1f2f3;color:var(--text)}
+.btn.danger{background:var(--red-soft);color:var(--red)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.field input,.field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:14.5px;background:#fbfbfc;color:var(--text);outline:0}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:28px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="logo">L</div>
+      <div><h1>LifeKeeper</h1><p id="todayline"></p></div>
+    </div>
+    <span class="badge">UI preview</span>
+  </header>
+  <main>
+    <section class="view on" id="view-home"></section>
+    <section class="view" id="view-records"></section>
+    <section class="view" id="view-calendar"></section>
+    <section class="view" id="view-spending"></section>
+  </main>
+  <button class="fab" onclick="openAdd()">Add record</button>
+  <nav class="tabbar"><div class="inner">
+    <button class="tab on" data-v="home" onclick="go('home',this)"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Home</button>
+    <button class="tab" data-v="records" onclick="go('records',this)"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Records</button>
+    <button class="tab" data-v="calendar" onclick="go('calendar',this)"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>Calendar</button>
+    <button class="tab" data-v="spending" onclick="go('spending',this)"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M21 20H3"/></svg>Spending</button>
+  </div></nav>
+</div>
+<div class="sheet" id="detail"><div class="veil" onclick="closeSheets()"></div><div class="panel" id="detail-panel"></div></div>
+<div class="sheet" id="add"><div class="veil" onclick="closeSheets()"></div><div class="panel">
+  <div class="grab"></div><h3>New record</h3><p class="sub">Sample entry, stays in this preview</p>
+  <div class="field"><label>Name</label><input id="f-name" placeholder="e.g. Jio Fiber"></div>
+  <div class="field"><label>Category</label><select id="f-cat"><option>Bill</option><option>Renewal</option><option>Warranty</option></select></div>
+  <div class="field"><label>Amount (optional)</label><input id="f-amt" type="number" placeholder="1199"></div>
+  <div class="field"><label>Next due</label><input id="f-due" type="date"></div>
+  <div class="field"><label>Repeat</label><select id="f-rec"><option>Monthly</option><option>Quarterly</option><option>Yearly</option><option>One-time</option></select></div>
+  <div class="btns"><button class="btn ghost" onclick="closeSheets()">Cancel</button><button class="btn primary" onclick="saveAdd()">Save</button></div>
+</div></div>
+<script>
+const TODAY=new Date(2026,9,27);
+const R=[
+ {id:1,name:'Jio Fiber',cat:'Bill',amt:1199,due:'2026-10-26',rec:'Monthly',note:'Autopay failed last cycle'},
+ {id:2,name:'MSEDCL Electricity',cat:'Bill',amt:840,due:'2026-10-30',rec:'Monthly'},
+ {id:3,name:'Netflix Premium',cat:'Renewal',amt:649,due:'2026-11-05',rec:'Monthly'},
+ {id:4,name:'Bike Insurance · Bajaj',cat:'Renewal',amt:3240,due:'2026-11-18',rec:'Yearly'},
+ {id:5,name:'LIC Premium',cat:'Bill',amt:4000,due:'2026-12-02',rec:'Quarterly'},
+ {id:6,name:'iPhone 15 Warranty',cat:'Warranty',amt:null,due:'2027-02-12',rec:'One-time',note:'Apple standard, 1 year'},
+ {id:7,name:'Washing Machine Warranty',cat:'Warranty',amt:null,due:'2026-10-10',rec:'One-time',note:'LG, 2 year'},
+ {id:8,name:'Water Bill',cat:'Bill',amt:320,due:'2026-11-02',rec:'Monthly'}
+];
+const P=[
+ {name:'Bike Insurance · Bajaj',date:'2026-10-20',amt:3240,cat:'Insurance'},
+ {name:'Jio Fiber',date:'2026-10-05',amt:1199,cat:'Bills'},
+ {name:'MSEDCL Electricity',date:'2026-10-12',amt:840,cat:'Bills'},
+ {name:'Netflix Premium',date:'2026-10-04',amt:649,cat:'Subscriptions'},
+ {name:'Water Bill',date:'2026-10-08',amt:320,cat:'Bills'}
+];
+const d=s=>new Date(s+'T00:00:00');
+const dfmt=s=>d(s).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+function status(r){const t=d(r.due);const diff=Math.ceil((t-TODAY)/86400000);
+ if(r.cat==='Warranty'&&diff<0)return'expired';
+ if(diff<0)return'overdue';if(diff<=7)return'due';return'active';}
+function slabel(r){const st=status(r);if(st==='overdue')return Math.abs(Math.ceil((d(r.due)-TODAY)/86400000))+'d overdue';
+ if(st==='due')return'in '+Math.ceil((d(r.due)-TODAY)/86400000)+'d';
+ if(st==='expired')return'expired';return dfmt(r.due).replace(/ \d{4}$/,'');}
+const rupee=n=>n==null?'—':'₹'+n.toLocaleString('en-IN');
+const icon=c=>c==='Bill'?'ic bill':c==='Renewal'?'ic ren':'ic war';
+const ic=c=>c==='Bill'?'₹':c==='Renewal'?'↻':'🛡';
+let filter='All',query='',calY=2026,calM=9,selDay=null;
+function go(v,btn){document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));
+ document.getElementById('view-'+v).classList.add('on');
+ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t===btn));
+ document.querySelector('.fab').style.display=(v==='home'||v==='records')?'block':'none';}
+function row(r){return `<div class="row" onclick="detail(${r.id})">
+ <div class="${icon(r.cat)}">${ic(r.cat)}</div>
+ <div class="r-main"><b>${r.name}</b><span>${r.cat} · ${r.rec}</span></div>
+ <div class="r-end"><b>${rupee(r.amt)}</b><span class="chip ${status(r)}">${slabel(r)}</span></div></div>`;}
+function renderHome(){
+ const over=R.filter(r=>status(r)==='overdue'),due=R.filter(r=>status(r)==='due');
+ const dueAmt=over.concat(due).reduce((a,r)=>a+(r.amt||0),0);
+ const up=R.filter(r=>['overdue','due'].includes(status(r))).concat(R.filter(r=>status(r)==='active')).slice(0,5);
+ document.getElementById('view-home').innerHTML=`
+  <div class="tiles">
+   <div class="tile hot"><b>${over.length}</b><span>overdue</span></div>
+   <div class="tile"><b>${due.length}</b><span>due this week</span></div>
+   <div class="tile"><b>${rupee(dueAmt)}</b><span>to pay</span></div>
+  </div>
+  <div class="sect">Up next</div><div class="card">${up.map(row).join('')}</div>
+  <div class="sect">Warranties</div><div class="card">${R.filter(r=>r.cat==='Warranty').map(row).join('')}</div>`;}
+function renderRecords(){
+ const f=R.filter(r=>(filter==='All'||r.cat===filter)&&r.name.toLowerCase().includes(query.toLowerCase()));
+ document.getElementById('view-records').innerHTML=`
+  <div class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7178" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  <input placeholder="Search records" value="${query}" oninput="query=this.value;renderRecords()"></div>
+  <div class="chips">${['All','Bill','Renewal','Warranty'].map(c=>`<button class="fchip ${c===filter?'on':''}" onclick="filter='${c}';renderRecords()">${c}s</button>`).join('')}</div>
+  ${f.length?`<div class="card">${f.map(row).join('')}</div>`:'<div class="empty">Nothing matches</div>'}`;}
+function renderCal(){
+ const first=new Date(calY,calM,1),days=new Date(calY,calM+1,0).getDate();
+ const off=(first.getDay()+6)%7;const mn=first.toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+ const dueMap={};R.forEach(r=>{const t=d(r.due);const k=t.getFullYear()+'-'+t.getMonth()+'-'+t.getDate();
+  (dueMap[k]=dueMap[k]||[]).push(r);});
+ let g=['M','T','W','T','F','S','S'].map(x=>`<div class="dow">${x}</div>`).join('');
+ for(let i=0;i<off;i++)g+='<div></div>';
+ for(let n=1;n<=days;n++){const k=calY+'-'+calM+'-'+n;const is=dueMap[k];
+  const cls=isToday(calY,calM,n)?'today':(selDay===n?'sel':'');
+  g+=`<div class="day ${cls}" onclick="selDay=${n};renderCal()">${n}${is?`<span class="dot ${dayDot(is)}"></span>`:''}</div>`;}
+ const sel=selDay?dueMap[calY+'-'+calM+'-'+selDay]||[]:[];
+ document.getElementById('view-calendar').innerHTML=`
+  <div class="calhead"><button class="navbtn" onclick="calM--;if(calM<0){calM=11;calY--}selDay=null;renderCal()">‹</button><b>${mn}</b><button class="navbtn" onclick="calM++;if(calM>11){calM=0;calY++}selDay=null;renderCal()">›</button></div>
+  <div class="grid">${g}</div>
+  <div class="sect">${selDay?dfmt(calY+'-'+String(calM+1).padStart(2,'0')+'-'+String(selDay).padStart(2,'0')):'Upcoming dues'}</div>
+  ${sel.length?`<div class="card">${sel.map(row).join('')}</div>`:'<div class="empty">'+(selDay?'Nothing due this day':'Pick a day to see its dues')+'</div>'}`;}
+function dayDot(a){return a.some(r=>status(r)==='overdue')?'r':(a.some(r=>status(r)==='due')?'a':'g');}
+function isToday(y,m,n){return y===2026&&m===9&&n===27;}
+function renderSpending(){
+ const total=P.reduce((a,p)=>a+p.amt,0);
+ const cats={};P.forEach(p=>cats[p.cat]=(cats[p.cat]||0)+p.amt);
+ const order=Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+ document.getElementById('view-spending').innerHTML=`
+  <div class="spent"><div class="lbl">Paid in October</div><div class="big">${rupee(total)}</div>
+   ${order.map(([c,v])=>`<div class="bar"><i style="width:${Math.round(v/total*100)}%"></i></div><div class="leg"><span>${c}</span><b style="color:var(--text)">${rupee(v)}</b></div>`).join('')}
+  </div>
+  <div class="sect">Payment history</div><div class="card">${P.map(p=>`<div class="row" style="cursor:default">
+   <div class="${icon('Renewal')}">↻</div>
+   <div class="r-main"><b>${p.name}</b><span>${dfmt(p.date)}</span></div><div class="r-end"><b>${rupee(p.amt)}</b><span class="chip paid">paid</span></div></div>`).join('')}</div>`;}
+function detail(id){const r=R.find(x=>x.id===id);const st=status(r);
+ document.getElementById('detail-panel').innerHTML=`
+  <div class="grab"></div><h3>${r.name}</h3><p class="sub">${r.cat} · ${r.rec}</p>
+  <div class="kv"><span>Status</span><b style="color:${st==='overdue'?'var(--red)':st==='due'?'var(--amber)':st==='expired'?'var(--muted)':'var(--ok)'}">${st}</b></div>
+  <div class="kv"><span>Amount</span><b>${rupee(r.amt)}</b></div>
+  <div class="kv"><span>${r.cat==='Warranty'?'Valid till':'Next due'}</span><b>${dfmt(r.due)}</b></div>
+  ${r.note?`<div class="kv"><span>Note</span><b>${r.note}</b></div>`:''}
+  <div class="btns"><button class="btn ghost" onclick="closeSheets()">Close</button><button class="btn primary" onclick="pay(${r.id})">Mark paid</button></div>`;
+ document.getElementById('detail').classList.add('open');}
+function pay(id){const r=R.find(x=>x.id===id);const i=R.indexOf(r);
+ R.splice(i,1);if(r.amt)P.unshift({name:r.name,date:'2026-10-27',amt:r.amt,cat:r.cat==='Bill'?'Bills':r.cat==='Renewal'?'Renewals':'Other'});
+ closeSheets();rerender();}
+function openAdd(){document.getElementById('add').classList.add('open');}
+function saveAdd(){const n=document.getElementById('f-name').value.trim();if(!n){document.getElementById('f-name').focus();return;}
+ R.push({id:Date.now(),name:n,cat:document.getElementById('f-cat').value,amt:+document.getElementById('f-amt').value||null,
+  due:document.getElementById('f-due').value||'2026-11-15',rec:document.getElementById('f-rec').value});
+ closeSheets();['f-name','f-amt'].forEach(i=>document.getElementById(i).value='');rerender();}
+function closeSheets(){document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('open'));}
+function rerender(){renderHome();renderRecords();renderCal();renderSpending();}
+document.getElementById('todayline').textContent=TODAY.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+rerender();
+</script>
+</body>
+</html>

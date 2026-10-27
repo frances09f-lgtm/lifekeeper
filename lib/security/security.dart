@@ -149,11 +149,9 @@ class BiometricFlagStore {
 class BiometricUnlock {
   final LocalAuthentication auth;
   final BiometricFlagStore flags;
-  BiometricUnlock({
-    LocalAuthentication? auth,
-    BiometricFlagStore? flags,
-  })  : auth = auth ?? LocalAuthentication(),
-        flags = flags ?? BiometricFlagStore();
+  BiometricUnlock({LocalAuthentication? auth, BiometricFlagStore? flags})
+    : auth = auth ?? LocalAuthentication(),
+      flags = flags ?? BiometricFlagStore();
 
   /// Fail-closed: any storage trouble reads as "not enabled", so a broken
   /// store can never surface the biometric path or unlock anything.

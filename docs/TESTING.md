@@ -23,6 +23,10 @@ CI must pass fatal analyze, meaningful rule/recurrence/reminder/repository/backu
 - Settings: payday budget period, CSV export of payment history (formula-safe), True black theme.
 - Brand marks are bundled colours and initials. No logo downloads, no internet.
 
+## 1.1.1 checks (first-run Home and default theme)
+- Fresh install with no records: Home shows the same cards as a filled Home: ₹0 total card ("No bills yet"), a "Never miss a due date" tip card, Scan bill / Quick add, a Next payments row with Add your first bill / Scan a bill / Track a free trial cards, and a Popular to add list that opens the editor prefilled (title, category, cycle). The old search/filters and "No records match these filters" are hidden until the first record exists.
+- Theme now defaults to Light (the sage look) even when the phone is in dark mode. Picking System, Dark or True black in Settings still works and is kept.
+
 ## Honest limits
 - Database and attachments are app-private but are not encrypted at rest by this app. Android device encryption depends on the device. PIN is a screen lock, PBKDF2 salted hash lives in secure storage. Exports are AES-256-GCM authenticated encryption with PBKDF2.
 - Biometric unlock is not included. Widget is an in-app preview only. SMS demo parses pasted/sample text only, no SMS permission. Bundled Latin ML Kit OCR is the only scanning model; no LLM, cloud, account, backend or language controls.

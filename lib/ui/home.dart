@@ -23,6 +23,7 @@ extension HomeView on _LifeKeeperState {
       currency: homeCurrency,
       payday: payday,
     );
+    if (records.isEmpty) return emptyHome(context, summary);
     final alerts = homeAlerts(records, nowTime);
     final next = nextPayments(records, nowTime);
     final ranked = radar(
@@ -296,6 +297,354 @@ extension HomeView on _LifeKeeperState {
     ];
   }
 
+  /// First-run Home: the same cards as the full Home (total, alert, next
+  /// payments row, list) filled with starting points instead of records.
+  List<Widget> emptyHome(BuildContext context, MonthSummary summary) {
+    final theme = Theme.of(context);
+    return [
+      const SizedBox(height: 4),
+      totalCard(context, summary),
+      const SizedBox(height: 12),
+      tipCard(
+        context,
+        key: const Key('home-welcome'),
+        icon: Icons.notifications_active_outlined,
+        title: 'Never miss a due date',
+        body:
+            'Add a bill and get a reminder before it is due. It all stays on this phone.',
+        action: 'Add bill',
+        onPressed: () => edit(),
+      ),
+      const SizedBox(height: 2),
+      Row(
+        children: [
+          Expanded(
+            child: FilledButton.icon(
+              onPressed: scan,
+              icon: const Icon(Icons.document_scanner_outlined, size: 20),
+              label: const Text('Scan bill'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: quick,
+              icon: const Icon(Icons.bolt_rounded, size: 20),
+              label: const Text('Quick add'),
+            ),
+          ),
+        ],
+      ),
+      title('Next payments', trailing: 'Start here'),
+      SizedBox(
+        height: 178,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            starterCard(
+              context,
+              key: const Key('home-add-first'),
+              icon: Icons.add_rounded,
+              chip: 'Step 1',
+              title: 'Add your first bill',
+              subtitle: 'Rent, EMI, power',
+              action: 'Add bill',
+              onPressed: () => edit(),
+            ),
+            const SizedBox(width: 10),
+            starterCard(
+              context,
+              icon: Icons.document_scanner_outlined,
+              chip: 'Fastest',
+              title: 'Scan a bill',
+              subtitle: 'Reads amount + date',
+              action: 'Scan',
+              onPressed: scan,
+            ),
+            const SizedBox(width: 10),
+            starterCard(
+              context,
+              icon: Icons.hourglass_bottom_rounded,
+              chip: 'Trials',
+              title: 'Track a free trial',
+              subtitle: 'Cancel in time',
+              action: 'Add trial',
+              onPressed: () => edit(initial: {'category': 'Subscription'}),
+            ),
+          ],
+        ),
+      ),
+      title('Popular to add', trailing: 'Tap to add'),
+      Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            for (var i = 0; i < starters.length; i++) ...[
+              if (i > 0) const Divider(indent: 68),
+              starterRow(context, starters[i]),
+            ],
+          ],
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(top: 16, left: 4),
+        child: Text(
+          'No account, no bank login · All data stays on this phone',
+          style: theme.textTheme.bodySmall,
+        ),
+      ),
+    ];
+  }
+
+  static const starters = <(String, String, String, String)>[
+    ('Electricity', 'Bill', 'monthly', 'Monthly'),
+    ('Jio recharge', 'Bill', 'monthly', 'Monthly'),
+    ('Netflix', 'Subscription', 'monthly', 'Monthly'),
+    ('Rent', 'Bill', 'monthly', 'Monthly'),
+    ('Car insurance', 'Insurance', 'yearly', 'Yearly'),
+    ('Phone warranty', 'Warranty', 'none', 'Warranty'),
+  ];
+
+  Widget tipCard(
+    BuildContext context, {
+    Key? key,
+    required IconData icon,
+    required String title,
+    required String body,
+    required String action,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: dark ? LkColors.softDark : LkColors.soft,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+        child: Row(
+          children: [
+            Icon(icon, color: scheme.primary, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    body,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.primary,
+                foregroundColor: dark ? Colors.black : Colors.white,
+                minimumSize: const Size(0, 38),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+              ),
+              onPressed: onPressed,
+              child: Text(action),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget starterCard(
+    BuildContext context, {
+    Key? key,
+    required IconData icon,
+    required String chip,
+    required String title,
+    required String subtitle,
+    required String action,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final soft = dark ? LkColors.softDark : LkColors.soft;
+    return SizedBox(
+      key: key,
+      width: 172,
+      child: Card(
+        margin: EdgeInsets.zero,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: soft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, size: 19, color: scheme.primary),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: soft,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        chip,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          letterSpacing: 0,
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 34),
+                      padding: EdgeInsets.zero,
+                    ),
+                    onPressed: onPressed,
+                    child: Text(action),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget starterRow(
+    BuildContext context,
+    (String, String, String, String) s,
+  ) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    return InkWell(
+      onTap: () => edit(
+        initial: {
+          'title': s.$1,
+          'category': s.$2,
+          if (s.$3 != 'none') 'repeat': s.$3,
+        },
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            BrandAvatar(title: s.$1, category: s.$2),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    s.$1,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(s.$2, style: theme.textTheme.bodySmall),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, size: 18, color: scheme.primary),
+                    const SizedBox(width: 2),
+                    Text(
+                      'Add',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: dark ? LkColors.softDark : LkColors.soft,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    s.$4,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      letterSpacing: 0,
+                      color: scheme.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   String periodName(MonthSummary s) {
     const months = [
       'January',
@@ -359,7 +708,9 @@ extension HomeView on _LifeKeeperState {
             ),
             const SizedBox(height: 4),
             Text(
-              '${s.activeCount} active · ${rupees(s.perDay, s.currency)} a day',
+              records.isEmpty
+                  ? 'No bills yet · ${rupees(0, s.currency)} a day'
+                  : '${s.activeCount} active · ${rupees(s.perDay, s.currency)} a day',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),
@@ -412,7 +763,9 @@ extension HomeView on _LifeKeeperState {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    s.previous == 0
+                    records.isEmpty
+                        ? 'Your first month starts here'
+                        : s.previous == 0
                         ? 'Nothing paid last ${s.start.day == 1 ? 'month' : 'period'} to compare'
                         : '${up
                               ? '+'

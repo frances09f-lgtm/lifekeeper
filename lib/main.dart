@@ -604,9 +604,9 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       ),
       themeMode: settings['theme'] == 'dark' || settings['theme'] == 'black'
           ? ThemeMode.dark
-          : settings['theme'] == 'light'
-          ? ThemeMode.light
-          : ThemeMode.system,
+          : settings['theme'] == 'system'
+          ? ThemeMode.system
+          : ThemeMode.light,
       builder: (context, child) => Stack(
         children: [
           child!,

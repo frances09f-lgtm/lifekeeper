@@ -33,7 +33,7 @@ extension SettingsView on _LifeKeeperState {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             dropdown(
-              themeLabel(settings['theme'] as String? ?? 'system'),
+              themeLabel(settings['theme'] as String? ?? 'light'),
               const ['System', 'Light', 'Dark', 'True black'],
               (v) => action(
                 () => repo.setting('theme', switch (v) {
@@ -344,7 +344,7 @@ extension SettingsView on _LifeKeeperState {
       title('About'),
       card(
         const Text(
-          'LifeKeeper 1.1.0\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
+          'LifeKeeper 1.1.1\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
         ),
       ),
     ];

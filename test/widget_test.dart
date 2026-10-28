@@ -20,6 +20,46 @@ Future<void> settle(WidgetTester tester, Finder until) async {
 }
 
 void main() {
+  testWidgets('First run: empty Home uses the full card layout, light theme', (
+    tester,
+  ) async {
+    sqfliteFfiInit();
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    tester.view.physicalSize = const Size(780, 1688);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final dir = await tester.runAsync(
+      () => Directory.systemTemp.createTemp('lk_empty'),
+    );
+    final repo = await tester.runAsync(
+      () => Repository.open(factory: databaseFactoryFfi, directory: dir!),
+    );
+    await tester.pumpWidget(LifeKeeper(repo: repo!, enforceLock: false));
+    await settle(tester, find.byKey(const Key('home-add-first')));
+    expect(find.byKey(const Key('home-total')), findsOneWidget);
+    expect(find.text('No bills yet · ₹0 a day'), findsOneWidget);
+    expect(find.byKey(const Key('home-welcome')), findsOneWidget);
+    expect(find.text('Add your first bill'), findsOneWidget);
+    expect(find.text('Start here'), findsOneWidget);
+    expect(find.text('No records match these filters'), findsNothing);
+    // A dark phone still gets the light sage look unless the user picks dark.
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.light);
+    await tester.scrollUntilVisible(
+      find.text('Popular to add'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Popular to add'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.runAsync(() async {
+      await repo.db.close();
+      await dir!.delete(recursive: true);
+    });
+  }, timeout: const Timeout(Duration(minutes: 3)));
+
   testWidgets('Home and add review show real editable fields and navigation', (
     tester,
   ) async {

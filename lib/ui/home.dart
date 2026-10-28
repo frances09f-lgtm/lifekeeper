@@ -814,7 +814,7 @@ extension HomeView on _LifeKeeperState {
     final good = dark ? const Color(0xff9fd3a8) : const Color(0xff2f7a4c);
     final bad = dark ? LkColors.dangerDark : LkColors.danger;
     final paidColor = scheme.primary;
-    final leftColor = dark ? const Color(0xff6f8a93) : const Color(0xff9db0b8);
+    final leftColor = dark ? const Color(0xff7d9aa3) : const Color(0xff46666f);
     final history = monthlyTotals(payments, s.currency, now, months: 6);
     history[history.length - 1] = s.total;
     final paidFlex = total == 0 ? 0 : (paid * 1000 / total).round();
@@ -860,39 +860,32 @@ extension HomeView on _LifeKeeperState {
             ),
             const SizedBox(height: 16),
             bigAmount(context, total, s.currency),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    records.isEmpty
-                        ? 'No bills yet · ${rupees(0, s.currency)} a day'
-                        : '${s.activeCount} active ${s.activeCount == 1 ? 'bill' : 'bills'}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                if (records.isNotEmpty)
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: yearly
-                              ? rupees((year / 12).round(), s.currency)
-                              : rupees(s.perDay, s.currency),
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        TextSpan(
-                          text: yearly ? ' a month' : ' a day',
-                          style: TextStyle(color: scheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                    style: theme.textTheme.bodyMedium,
-                  ),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              records.isEmpty
+                  ? 'No bills yet · ${rupees(0, s.currency)} a day'
+                  : '${s.activeCount} active ${s.activeCount == 1 ? 'bill' : 'bills'}',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.8),
+              ),
             ),
+            if (records.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: yearly
+                          ? rupees((year / 12).round(), s.currency)
+                          : rupees(s.perDay, s.currency),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    TextSpan(text: yearly ? ' a month' : ' a day'),
+                  ],
+                ),
+                style: theme.textTheme.bodyLarge,
+              ),
+            ],
             const SizedBox(height: 18),
             Row(
               children: [
@@ -997,7 +990,7 @@ extension HomeView on _LifeKeeperState {
                                           ? paidColor
                                           : (dark
                                                 ? LkColors.ringDark
-                                                : const Color(0xffd5e0d7)),
+                                                : const Color(0xffa3b1a6)),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),

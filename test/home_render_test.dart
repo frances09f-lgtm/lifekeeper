@@ -98,13 +98,29 @@ void main() {
     // Populated state: realistic fixture bills in the throwaway test db.
     final repo = await openRepo(tester, 'populated');
     await tester.runAsync(() async {
+      // Mirror the user's reference "with bills" panel: six active bills
+      // totalling Rs 2,938/month, Airtel Fiber overdue since 2026-10-26
+      // (red Mark paid card) and an Amazon Prime trial ending in 2 days
+      // (yellow Keep it card: Then Rs 299 / save Rs 3,588 a year).
       await repo.save(bill('Airtel Fiber', 'Internet', 79900, -2));
-      await repo.save(bill('Amazon Prime', 'Streaming', 29900, 2));
-      await repo.save(bill('Jio', 'Mobile', 49900, 5));
-      await repo.save(bill('Netflix', 'Streaming', 64900, 9));
       await repo.save(
-        bill('Electricity', 'Utilities', 120000, 12, status: 'paid'),
+        AdminRecord({
+          'title': 'Amazon Prime',
+          'category': 'Streaming',
+          'amount': 29900,
+          'currency': 'INR',
+          'repeat': 'monthly',
+          'due': dateText(day(DateTime.now()).add(const Duration(days: 2))),
+          'status': 'active',
+          'trialEnd':
+              dateText(day(DateTime.now()).add(const Duration(days: 2))),
+          'priceAfterTrial': 29900,
+        }),
       );
+      await repo.save(bill('Jio', 'Mobile', 49900, 2));
+      await repo.save(bill('Netflix', 'Streaming', 64900, 3));
+      await repo.save(bill('Spotify', 'Music', 19900, 2));
+      await repo.save(bill('Electricity', 'Utilities', 49300, 3));
     });
     final key = GlobalKey();
     await tester.pumpWidget(

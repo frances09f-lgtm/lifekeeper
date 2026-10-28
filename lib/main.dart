@@ -3,8 +3,9 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart'
+    show LicenseEntryWithLineBreaks, LicenseRegistry;
+import 'package:flutter/services.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,6 +35,11 @@ void systemReconcile() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(const [
+      'Manrope font',
+    ], await rootBundle.loadString('assets/fonts/Manrope-OFL.txt'));
+  });
   try {
     final repo = await Repository.open();
     final notifications = NotificationService(repo);
@@ -72,7 +78,7 @@ class LkColors {
   static const softDark = Color(0xff2b4534);
   static const ring = Color(0xffb9cdbd);
   static const ringDark = Color(0xff4f6b57);
-  static const canvas = Color(0xfff5f7f5);
+  static const canvas = Color(0xfff2f5f0);
   static const canvasDark = Color(0xff15251d);
   static const surfaceDark = Color(0xff203127);
   static const line = Color(0xffe4eae5);
@@ -133,11 +139,13 @@ ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
     useMaterial3: true,
     colorScheme: scheme,
     brightness: brightness,
+    fontFamily: 'Manrope',
   );
   final text = base.textTheme.apply(bodyColor: ink, displayColor: ink);
   final shape12 = RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(10),
   );
+  const pill = StadiumBorder();
   return base.copyWith(
     scaffoldBackgroundColor: canvas,
     dividerColor: line,
@@ -169,7 +177,7 @@ ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         side: BorderSide(color: line),
       ),
     ),
@@ -200,14 +208,14 @@ ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(0, 48),
-        shape: shape12,
+        shape: pill,
         textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(0, 48),
-        shape: shape12,
+        shape: pill,
         foregroundColor: ink,
         side: BorderSide(color: line),
         textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
@@ -215,7 +223,7 @@ ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        shape: shape12,
+        shape: pill,
         textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600),
       ),
     ),
@@ -231,6 +239,15 @@ ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
     ),
     appBarTheme: AppBarTheme(
       centerTitle: false,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: surface,
+        systemNavigationBarIconBrightness: dark
+            ? Brightness.light
+            : Brightness.dark,
+      ),
       backgroundColor: canvas,
       surfaceTintColor: Colors.transparent,
       scrolledUnderElevation: 0,
@@ -246,11 +263,9 @@ ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
       backgroundColor: surface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      height: 68,
+      height: 70,
       indicatorColor: scheme.primaryContainer,
-      indicatorShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
+      indicatorShape: const StadiumBorder(),
       iconTheme: WidgetStateProperty.resolveWith(
         (s) => IconThemeData(
           color: s.contains(WidgetState.selected) ? accent : muted,
@@ -272,7 +287,7 @@ ThemeData lifeTheme(Brightness brightness, {bool trueBlack = false}) {
       foregroundColor: scheme.onPrimary,
       elevation: 2,
       highlightElevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: surface,
@@ -322,7 +337,8 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
   List<AdminRecord> records = [];
   List<Map<String, Object?>> payments = [];
   Map<String, dynamic> settings = {};
-  bool loading = true, busy = false, locked = true, pinEnabled = false;
+  bool loading = true, busy = false, locked = false, pinEnabled = false;
+  bool homeYearly = false, searchOpen = false;
   String? error;
   int tab = 0;
   String insightsTab = 'Overview';
@@ -750,25 +766,78 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       home: Builder(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            toolbarHeight: 56,
+            toolbarHeight: 64,
+            titleSpacing: 20,
             title: Row(
               children: [
-                const LkLogo(size: 30),
+                const LkLogo(size: 32),
                 const SizedBox(width: 10),
-                Text(
-                  [
-                    'LifeKeeper',
-                    'Calendar',
-                    'Insights',
-                    'Vault',
-                    'Settings',
-                  ][tab],
+                Flexible(
+                  child: Text(
+                    [
+                      'LifeKeeper',
+                      'Calendar',
+                      'Insights',
+                      'Vault',
+                      'Settings',
+                    ][tab],
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 23,
+                      letterSpacing: -0.6,
+                    ),
+                  ),
                 ),
               ],
             ),
+            actions: tab == 0 && !loading && error == null
+                ? [
+                    IconButton(
+                      tooltip: 'Quick add',
+                      onPressed: quick,
+                      icon: const Icon(Icons.bolt_rounded, size: 22),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 16, left: 2),
+                      child: Tooltip(
+                        message: 'Scan bill',
+                        child: OutlinedButton.icon(
+                          onPressed: scan,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 36),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.onSurface,
+                              width: 1.3,
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.document_scanner_outlined,
+                            size: 17,
+                          ),
+                          label: const Text('Scan'),
+                        ),
+                      ),
+                    ),
+                  ]
+                : null,
           ),
           body: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LkLogo(size: 64),
+                      SizedBox(height: 20),
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.4),
+                      ),
+                    ],
+                  ),
+                )
               : error != null
               ? Center(
                   child: Column(
@@ -820,7 +889,9 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
           bottomNavigationBar: DecoratedBox(
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Theme.of(context).dividerColor),
+                top: BorderSide(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.6),
+                ),
               ),
             ),
             child: NavigationBar(
@@ -872,7 +943,14 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
               Text(eyebrow.toUpperCase(), style: t.labelSmall),
               const SizedBox(height: 6),
             ],
-            Text(heading, style: t.headlineMedium),
+            Text(
+              heading,
+              style: t.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 26,
+                letterSpacing: -0.8,
+              ),
+            ),
             const SizedBox(height: 6),
             Text(sub, style: t.bodySmall?.copyWith(fontSize: 14)),
           ],
@@ -891,9 +969,9 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
               child: Text(
                 text,
                 style: t.titleMedium?.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: -0.3,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
                 ),
               ),
             ),
@@ -906,7 +984,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
   Widget card(Widget child) => Padding(
     padding: const EdgeInsets.only(bottom: 10),
     child: Card(
-      child: Padding(padding: const EdgeInsets.all(16), child: child),
+      child: Padding(padding: const EdgeInsets.all(18), child: child),
     ),
   );
   Widget statTile(String value, String label, {bool alert = false}) => Builder(

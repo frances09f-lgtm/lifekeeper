@@ -28,6 +28,12 @@ Future<void> loadTestFonts() async {
     roboto.addFont(Future.value(ByteData.sublistView(await f.readAsBytes())));
   }
   await roboto.load();
+  final manrope = FontLoader('Manrope');
+  for (final weight in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold']) {
+    final f = File('assets/fonts/Manrope-$weight.ttf');
+    manrope.addFont(Future.value(ByteData.sublistView(await f.readAsBytes())));
+  }
+  await manrope.load();
   final icons = FontLoader('MaterialIcons')
     ..addFont(
       Future.value(

@@ -32,6 +32,17 @@ CI must pass fatal analyze, meaningful rule/recurrence/reminder/repository/backu
 - Fix: every opener gets its own connection (singleInstance false, busy_timeout 5 s); all repository calls go through one accessor that reopens a closed handle (one shared reopen) and retries once on a closed-database error; background code closes only its own connection. Storage errors in the UI show a calm message with Retry instead of the raw exception.
 - Schema unchanged (version 1, same file), so 1.1.0/1.1.1 data stays. Regression tests in test/db_closed_test.dart. Needs device validation: Mark as paid from the notification with the app open, install over 1.1.1 then open, midnight date change.
 
+## 1.1.4 checks (Subby-style look, emulator-checked)
+- Looked at on an Android 14 emulator (software rendering, 1080x2400, 420 dpi) with a capture-only build that turns screenshot blocking off; never released. Still not tested on a real phone.
+- Bundled Manrope font (SIL OFL, assets/fonts, listed under Settings > About > Open-source licences); works offline.
+- Header: logo + LifeKeeper, Quick add (bolt) and a Scan pill. FAB still adds an expense.
+- Total card: Monthly cost / Yearly cost toggle, change chip vs last month, big amount with small paise, active bills + per day, Paid / Left to pay two-part bar, date range, six-month bars once there is history.
+- Alerts: title, text, dark pill action (Mark paid / Keep it) + See bill.
+- Next payments: See all (Calendar), "Next 30 days: amount across N charges", cards with round logo, amount, In N days chip, Mark paid.
+- Your bills: sort pill (Next payment / Amount / Title / Priority), search toggle, filter menu (status, category); rows with due-today / overdue tint and outlined cycle chip. Needs attention and Next 7 days moved off Home (Calendar keeps the days view).
+- Startup shows the logo while loading instead of the PIN screen; the PIN screen only appears when a PIN is set. Status bar icons are dark on the light theme.
+- Insights/Spending restyled: pill tabs, sentence-case stat cards, highlighted current bar, Where it went bars, one-card payment history with readable dates.
+
 ## Honest limits
 - Database and attachments are app-private but are not encrypted at rest by this app. Android device encryption depends on the device. PIN is a screen lock, PBKDF2 salted hash lives in secure storage. Exports are AES-256-GCM authenticated encryption with PBKDF2.
 - Biometric unlock is not included. Widget is an in-app preview only. SMS demo parses pasted/sample text only, no SMS permission. Bundled Latin ML Kit OCR is the only scanning model; no LLM, cloud, account, backend or language controls.

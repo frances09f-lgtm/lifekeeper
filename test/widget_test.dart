@@ -74,8 +74,8 @@ void main() {
     await settle(tester, find.text('Next payments'));
     expect(find.text('Next payments'), findsOneWidget);
     expect(find.byKey(const Key('home-total')), findsOneWidget);
-    expect(find.text('Scan bill'), findsOneWidget);
-    expect(find.text('Quick add'), findsOneWidget);
+    expect(find.byTooltip('Scan bill'), findsOneWidget);
+    expect(find.byTooltip('Quick add'), findsOneWidget);
     expect(find.text('Calendar'), findsOneWidget);
     await tester.tap(find.byTooltip('Add expense'));
     await settle(tester, find.text('Bill / record name'));

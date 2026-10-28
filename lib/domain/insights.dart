@@ -227,7 +227,7 @@ List<HomeAlert> homeAlerts(List<AdminRecord> records, DateTime now) {
             ? '${overdue.first.title} is overdue'
             : '${overdue.length} payments overdue',
         overdue.length == 1
-            ? 'Was due ${dateText(overdue.first.due)}${overdue.first.amount == null ? '' : ' · ${rupees(overdue.first.amount!, overdue.first.currency)}'}'
+            ? 'Was due ${_dayMonth(overdue.first.due)}${overdue.first.amount == null ? '' : ' · ${rupees(overdue.first.amount!, overdue.first.currency)}'}'
             : overdue.map((r) => r.title).take(3).join(', '),
         overdue.length == 1 ? 'Mark paid' : 'Mark all paid',
         overdue,
@@ -306,7 +306,7 @@ List<Signal> signals(
           Signal(
             'missed',
             '${r.title} not marked paid',
-            'Due ${dateText(r.due)}, $late day${late == 1 ? '' : 's'} ago',
+            'Due ${_dayMonth(r.due)}, $late day${late == 1 ? '' : 's'} ago',
             r,
           ),
         );
@@ -462,6 +462,10 @@ String paymentsCsv(List<Map<String, Object?>> payments) {
 }
 
 /// "₹1,234" style rupee text for the Home total (whole rupees, Indian grouping).
+String _dayMonth(DateTime? d) => d == null
+    ? ''
+    : '${d.day} ${const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]}';
+
 String rupees(int minor, [String currency = 'INR']) {
   if (currency != 'INR') return money(minor, currency);
   final neg = minor < 0;

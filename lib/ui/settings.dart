@@ -26,7 +26,14 @@ extension SettingsView on _LifeKeeperState {
       },
     );
     return [
-      pageHeader('Settings', 'Appearance, reminders, security and backups.'),
+      Padding(
+        padding: const EdgeInsets.only(left: 2, top: 2),
+        child: Text(
+          'Appearance, reminders, security and backups.',
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
+      ),
       title('Appearance'),
       card(
         Column(
@@ -336,8 +343,16 @@ extension SettingsView on _LifeKeeperState {
       title('About'),
       card(
         const Text(
-          'LifeKeeper 1.1.3\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
+          'LifeKeeper 1.1.4\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
         ),
+      ),
+      TextButton(
+        onPressed: () => showLicensePage(
+          context: context,
+          applicationName: 'LifeKeeper',
+          applicationVersion: '1.1.4',
+        ),
+        child: const Text('Open-source licences'),
       ),
     ];
   }
@@ -376,8 +391,12 @@ extension SettingsView on _LifeKeeperState {
               children: [
                 const LkLogo(size: 18),
                 const SizedBox(width: 8),
-                Text('LifeKeeper · $hh:$mm', style: theme.textTheme.bodySmall),
-                const Spacer(),
+                Expanded(
+                  child: Text(
+                    'LifeKeeper · $hh:$mm',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
                 Text('Preview', style: theme.textTheme.labelSmall),
               ],
             ),
@@ -396,7 +415,8 @@ extension SettingsView on _LifeKeeperState {
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              runSpacing: 6,
               children: [
                 actionText('Mark as paid'),
                 actionText('Remind me tomorrow'),

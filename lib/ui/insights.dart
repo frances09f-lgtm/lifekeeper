@@ -13,9 +13,14 @@ extension InsightsView on _LifeKeeperState {
     final theme = Theme.of(context);
     const tabs = ['Overview', 'Trends', 'Services', 'Signals'];
     return [
-      pageHeader(
-        'Insights',
-        'From payments you marked paid and the dues on this phone.',
+      Padding(
+        padding: const EdgeInsets.only(left: 2, bottom: 14, top: 2),
+        child: Text(
+          'From payments you marked paid and the dues on this phone.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
       Container(
         padding: const EdgeInsets.all(4),
@@ -23,7 +28,7 @@ extension InsightsView on _LifeKeeperState {
           color: theme.brightness == Brightness.dark
               ? LkColors.softDark
               : LkColors.soft,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(99),
         ),
         child: Row(
           children: [
@@ -39,7 +44,7 @@ extension InsightsView on _LifeKeeperState {
                       color: insightsTab == t
                           ? theme.cardColor
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(99),
                     ),
                     child: Text(
                       t,
@@ -74,13 +79,13 @@ extension InsightsView on _LifeKeeperState {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              label.toUpperCase(),
-              style: theme.textTheme.labelSmall?.copyWith(fontSize: 10.5),
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(fontSize: 13),
             ),
             const SizedBox(height: 6),
             Text(
@@ -88,8 +93,8 @@ extension InsightsView on _LifeKeeperState {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.6,
               ),
             ),
           ],
@@ -120,9 +125,31 @@ extension InsightsView on _LifeKeeperState {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (values[i] > 0 && values.length <= 6)
+                    if (values[i] > 0 && i == highlight)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onSurface,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          compactRupees(values[i], currency),
+                          maxLines: 1,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            letterSpacing: 0,
+                            fontSize: 9.5,
+                            color: theme.colorScheme.surface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      )
+                    else if (values[i] > 0 && values.length <= 6)
                       Text(
                         compactRupees(values[i], currency),
+                        maxLines: 1,
                         style: theme.textTheme.labelSmall?.copyWith(
                           letterSpacing: 0,
                           fontSize: 9.5,
@@ -134,8 +161,10 @@ extension InsightsView on _LifeKeeperState {
                       decoration: BoxDecoration(
                         color: i == highlight
                             ? theme.colorScheme.primary
-                            : (dark ? LkColors.ringDark : LkColors.ring),
-                        borderRadius: BorderRadius.circular(6),
+                            : (dark
+                                  ? LkColors.ringDark
+                                  : const Color(0xffd5e0d7)),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     const SizedBox(height: 6),

@@ -310,8 +310,7 @@ extension HomeView on _LifeKeeperState {
         key: const Key('home-welcome'),
         icon: Icons.notifications_active_outlined,
         title: 'Never miss a due date',
-        body:
-            'Add a bill and get a reminder before it is due. It all stays on this phone.',
+        body: 'Add a bill and get a reminder before it is due. It all stays on this phone.',
         action: 'Add bill',
         onPressed: () => edit(),
       ),
@@ -563,10 +562,7 @@ extension HomeView on _LifeKeeperState {
     );
   }
 
-  Widget starterRow(
-    BuildContext context,
-    (String, String, String, String) s,
-  ) {
+  Widget starterRow(BuildContext context, (String, String, String, String) s) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final dark = theme.brightness == Brightness.dark;

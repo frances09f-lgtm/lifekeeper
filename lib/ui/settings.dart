@@ -302,21 +302,13 @@ extension SettingsView on _LifeKeeperState {
           ],
         ),
       ),
-      title('Demo and privacy'),
+      title('Privacy and data'),
       card(
         Column(
           children: [
             TextButton(
-              onPressed: () => action(() => repo.demo()),
-              child: const Text('Add labeled demo records'),
-            ),
-            TextButton(
               onPressed: () => action(() => repo.removeDemo()),
               child: const Text('Remove demo records'),
-            ),
-            TextButton(
-              onPressed: () => quick(sms: true),
-              child: const Text('SMS bill demo (pasted text only)'),
             ),
             TextButton(
               onPressed: () async {
@@ -344,7 +336,7 @@ extension SettingsView on _LifeKeeperState {
       title('About'),
       card(
         const Text(
-          'LifeKeeper 1.1.2\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
+          'LifeKeeper 1.1.3\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
         ),
       ),
     ];

@@ -232,6 +232,75 @@ class _RecordEditorState extends State<RecordEditor> {
     }
   }
 
+  Widget inputField(MapEntry<String, String> entry) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: TextFormField(
+      controller: inputs[entry.key],
+      maxLines: ['notes', 'description', 'consequence'].contains(entry.key)
+          ? 3
+          : 1,
+      keyboardType:
+          [
+            'amountInput',
+            'interval',
+            'importance',
+            'priorityOverride',
+            'grace',
+          ].contains(entry.key)
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      decoration: InputDecoration(
+        labelText: entry.value,
+        suffixIcon: ['due', 'trialEnd'].contains(entry.key)
+            ? IconButton(
+                icon: const Icon(Icons.calendar_month),
+                onPressed: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: strictDate(value(entry.key)) ?? DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime(2200),
+                  );
+                  if (date != null) inputs[entry.key]!.text = dateText(date);
+                },
+              )
+            : null,
+      ),
+      validator: (text) {
+        final v = text?.trim() ?? '';
+        if (entry.key == 'title' && v.isEmpty) return 'Enter a name';
+        if (['due', 'trialEnd'].contains(entry.key) &&
+            v.isNotEmpty &&
+            strictDate(v) == null)
+          return 'Use YYYY-MM-DD';
+        if (entry.key == 'currency' && !RegExp(r'^[A-Za-z]{3}$').hasMatch(v))
+          return 'Use a three-letter currency code';
+        if ([
+          'interval',
+          'importance',
+          'grace',
+          'priorityOverride',
+        ].contains(entry.key)) {
+          final n = int.tryParse(v);
+          if (entry.key == 'priorityOverride' && v.isEmpty) return null;
+          if (n == null ||
+              n < 0 ||
+              (entry.key == 'interval' && n < 1) ||
+              (entry.key == 'importance' && n > 3) ||
+              (entry.key == 'priorityOverride' && n > 100))
+            return 'Enter a valid number';
+        }
+        if (entry.key == 'dependencies' &&
+            v.isNotEmpty &&
+            v.split(',').any((e) => int.tryParse(e.trim()) == null))
+          return 'Use record IDs separated by commas';
+        if (entry.key == 'reminderMinute' && parseTime(v) == null)
+          return 'Use HH:MM';
+        return null;
+      },
+    ),
+  );
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -239,7 +308,7 @@ class _RecordEditorState extends State<RecordEditor> {
         widget.scanned
             ? 'Review bill'
             : widget.record == null
-            ? 'Add record'
+            ? 'Add expense'
             : 'Edit record',
       ),
     ),
@@ -278,151 +347,88 @@ class _RecordEditorState extends State<RecordEditor> {
               icon: const Icon(Icons.camera_alt),
               label: const Text('Retake'),
             ),
-          for (final entry in fields.entries)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 7),
-              child: TextFormField(
-                controller: inputs[entry.key],
-                maxLines:
-                    ['notes', 'description', 'consequence'].contains(entry.key)
-                    ? 3
-                    : 1,
-                keyboardType:
-                    [
-                      'amountInput',
-                      'interval',
-                      'importance',
-                      'priorityOverride',
-                      'grace',
-                    ].contains(entry.key)
-                    ? const TextInputType.numberWithOptions(decimal: true)
-                    : TextInputType.text,
-                decoration: InputDecoration(
-                  labelText: entry.value,
-                  suffixIcon: ['due', 'trialEnd'].contains(entry.key)
-                      ? IconButton(
-                          icon: const Icon(Icons.calendar_month),
-                          onPressed: () async {
-                            final date = await showDatePicker(
-                              context: context,
-                              initialDate:
-                                  strictDate(value(entry.key)) ??
-                                  DateTime.now(),
-                              firstDate: DateTime(1900),
-                              lastDate: DateTime(2200),
-                            );
-                            if (date != null)
-                              inputs[entry.key]!.text = dateText(date);
-                          },
-                        )
-                      : null,
-                ),
-                validator: (text) {
-                  final v = text?.trim() ?? '';
-                  if (entry.key == 'title' && v.isEmpty) return 'Enter a name';
-                  if (['due', 'trialEnd'].contains(entry.key) &&
-                      v.isNotEmpty &&
-                      strictDate(v) == null)
-                    return 'Use YYYY-MM-DD';
-                  if (entry.key == 'currency' &&
-                      !RegExp(r'^[A-Za-z]{3}$').hasMatch(v))
-                    return 'Use a three-letter currency code';
-                  if ([
-                    'interval',
-                    'importance',
-                    'grace',
-                    'priorityOverride',
-                  ].contains(entry.key)) {
-                    final n = int.tryParse(v);
-                    if (entry.key == 'priorityOverride' && v.isEmpty)
-                      return null;
-                    if (n == null ||
-                        n < 0 ||
-                        (entry.key == 'interval' && n < 1) ||
-                        (entry.key == 'importance' && n > 3) ||
-                        (entry.key == 'priorityOverride' && n > 100))
-                      return 'Enter a valid number';
-                  }
-                  if (entry.key == 'dependencies' &&
-                      v.isNotEmpty &&
-                      v.split(',').any((e) => int.tryParse(e.trim()) == null))
-                    return 'Use record IDs separated by commas';
-                  if (entry.key == 'reminderMinute' && parseTime(v) == null)
-                    return 'Use HH:MM';
-                  return null;
-                },
-              ),
-            ),
-          DropdownButtonFormField<String>(
-            initialValue: repeat,
-            decoration: const InputDecoration(labelText: 'Repeat'),
-            items: [
-              'none',
-              'daily',
-              'weekly',
-              'monthly',
-              'yearly',
-              'custom',
-            ].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
-            onChanged: (v) => setState(() => repeat = v ?? 'none'),
-          ),
-          const SizedBox(height: 16),
-          const Text('Remind me before the due date'),
-          Wrap(
-            spacing: 8,
+          for (final entry in fields.entries.where(
+            (e) => ['title', 'amountInput', 'due'].contains(e.key),
+          ))
+            inputField(entry),
+          ExpansionTile(
+            title: const Text('More options'),
+            subtitle: const Text('Repeat, reminders, notes and attachments'),
+            maintainState: true,
+            tilePadding: EdgeInsets.zero,
             children: [
-              for (final offset in [7, 3, 1, 0, -1, -3])
-                FilterChip(
-                  label: Text(
-                    offset == 0
-                        ? 'On date'
-                        : offset < 0
-                        ? '${-offset} days after'
-                        : '$offset days before',
+              for (final entry in fields.entries.where(
+                (e) => !['title', 'amountInput', 'due'].contains(e.key),
+              ))
+                inputField(entry),
+              DropdownButtonFormField<String>(
+                initialValue: repeat,
+                decoration: const InputDecoration(labelText: 'Repeat'),
+                items:
+                    ['none', 'daily', 'weekly', 'monthly', 'yearly', 'custom']
+                        .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                        .toList(),
+                onChanged: (v) => setState(() => repeat = v ?? 'none'),
+              ),
+              const SizedBox(height: 16),
+              const Text('Remind me before the due date'),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final offset in [7, 3, 1, 0, -1, -3])
+                    FilterChip(
+                      label: Text(
+                        offset == 0
+                            ? 'On date'
+                            : offset < 0
+                            ? '${-offset} days after'
+                            : '$offset days before',
+                      ),
+                      selected: reminders.contains(offset),
+                      onSelected: (v) => setState(() {
+                        if (v)
+                          reminders.add(offset);
+                        else
+                          reminders.remove(offset);
+                      }),
+                    ),
+                  TextButton(
+                    onPressed: () async {
+                      final value = await prompt(
+                        context,
+                        'Custom reminder',
+                        'Days before due date, use negative for after',
+                      );
+                      final n = int.tryParse(value ?? '');
+                      if (n != null && n.abs() <= 365 && mounted)
+                        setState(() => reminders.add(n));
+                    },
+                    child: const Text('Custom'),
                   ),
-                  selected: reminders.contains(offset),
-                  onSelected: (v) => setState(() {
-                    if (v)
-                      reminders.add(offset);
-                    else
-                      reminders.remove(offset);
-                  }),
+                ],
+              ),
+              for (final a in attachments)
+                ListTile(
+                  title: Text(a['name'] as String),
+                  subtitle: Text('${a['size']} bytes'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => setState(() {
+                      attachments.remove(a);
+                      if (added.contains(a['file'])) {
+                        widget.repo.removeAttachment(a['file'] as String);
+                        added.remove(a['file']);
+                      } else
+                        removed.add(a['file'] as String);
+                    }),
+                  ),
                 ),
-              TextButton(
-                onPressed: () async {
-                  final value = await prompt(
-                    context,
-                    'Custom reminder',
-                    'Days before due date, use negative for after',
-                  );
-                  final n = int.tryParse(value ?? '');
-                  if (n != null && n.abs() <= 365 && mounted)
-                    setState(() => reminders.add(n));
-                },
-                child: const Text('Custom'),
+              TextButton.icon(
+                onPressed: pickAttachment,
+                icon: const Icon(Icons.attach_file),
+                label: const Text('Add photo or PDF'),
               ),
             ],
-          ),
-          for (final a in attachments)
-            ListTile(
-              title: Text(a['name'] as String),
-              subtitle: Text('${a['size']} bytes'),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => setState(() {
-                  attachments.remove(a);
-                  if (added.contains(a['file'])) {
-                    widget.repo.removeAttachment(a['file'] as String);
-                    added.remove(a['file']);
-                  } else
-                    removed.add(a['file'] as String);
-                }),
-              ),
-            ),
-          TextButton.icon(
-            onPressed: pickAttachment,
-            icon: const Icon(Icons.attach_file),
-            label: const Text('Add photo or PDF'),
           ),
           if (error.isNotEmpty)
             Text(

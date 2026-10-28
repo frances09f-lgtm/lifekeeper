@@ -27,6 +27,11 @@ CI must pass fatal analyze, meaningful rule/recurrence/reminder/repository/backu
 - Fresh install with no records: Home shows the same cards as a filled Home: ₹0 total card ("No bills yet"), a "Never miss a due date" tip card, Scan bill / Quick add, a Next payments row with Add your first bill / Scan a bill / Track a free trial cards, and a Popular to add list that opens the editor prefilled (title, category, cycle). The old search/filters and "No records match these filters" are hidden until the first record exists.
 - Theme now defaults to Light (the sage look) even when the phone is in dark mode. Picking System, Dark or True black in Settings still works and is kept.
 
+## 1.1.2 checks (Database closed fix)
+- Cause: the notification-action isolate (Mark as paid / Remind me tomorrow) and the boot/time/date-change/app-update receiver run in a second Flutter engine in the same process. sqflite's Android plugin shared one native connection per path across engines (default single instance), so the background close() closed the UI's database and later taps showed "DatabaseException(error database_closed)".
+- Fix: every opener gets its own connection (singleInstance false, busy_timeout 5 s); all repository calls go through one accessor that reopens a closed handle (one shared reopen) and retries once on a closed-database error; background code closes only its own connection. Storage errors in the UI show a calm message with Retry instead of the raw exception.
+- Schema unchanged (version 1, same file), so 1.1.0/1.1.1 data stays. Regression tests in test/db_closed_test.dart. Needs device validation: Mark as paid from the notification with the app open, install over 1.1.1 then open, midnight date change.
+
 ## Honest limits
 - Database and attachments are app-private but are not encrypted at rest by this app. Android device encryption depends on the device. PIN is a screen lock, PBKDF2 salted hash lives in secure storage. Exports are AES-256-GCM authenticated encryption with PBKDF2.
 - Biometric unlock is not included. Widget is an in-app preview only. SMS demo parses pasted/sample text only, no SMS permission. Bundled Latin ML Kit OCR is the only scanning model; no LLM, cloud, account, backend or language controls.

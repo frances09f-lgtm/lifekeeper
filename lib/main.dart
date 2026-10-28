@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:sqflite/sqflite.dart' show DatabaseException;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/repository.dart';
@@ -44,8 +45,16 @@ void main() async {
           body: Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(
-                'LifeKeeper could not open local storage. Your data has not been cleared. Restart the app to retry.\n$e',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "LifeKeeper couldn't open your saved data just now. Nothing has been cleared.",
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(onPressed: main, child: const Text('Retry')),
+                ],
               ),
             ),
           ),
@@ -373,7 +382,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
     } catch (e) {
       if (mounted)
         setState(() {
-          error = '$e';
+          error = friendlyError(e);
           loading = false;
           locked = false;
         });
@@ -425,8 +434,17 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
       if (mounted) {
         final context = navigator.currentContext;
         if (context != null)
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('$e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(friendlyError(e)),
+              action: e is DatabaseException
+                  ? SnackBarAction(
+                      label: 'Retry',
+                      onPressed: () => action(task),
+                    )
+                  : null,
+            ),
+          );
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -756,9 +774,19 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(error!),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(error!, textAlign: TextAlign.center),
+                      ),
+                      const SizedBox(height: 12),
                       FilledButton(
-                        onPressed: start,
+                        onPressed: () {
+                          setState(() {
+                            loading = true;
+                            error = null;
+                          });
+                          start();
+                        },
                         child: const Text('Retry'),
                       ),
                     ],

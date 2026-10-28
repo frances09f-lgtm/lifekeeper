@@ -21,7 +21,7 @@ void notificationAction(NotificationResponse response) async {
     await service.initialize();
     await service.reconcile();
   } finally {
-    await repo.db.close();
+    await repo.close();
   }
 }
 
@@ -63,7 +63,7 @@ Future<void> reconcileAfterSystemChange() async {
     await service.initialize();
     await service.reconcile();
   } finally {
-    await repo?.db.close();
+    await repo?.close();
     await const MethodChannel('lifekeeper/system').invokeMethod<void>('done');
   }
 }

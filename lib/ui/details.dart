@@ -41,7 +41,7 @@ class _RecordDetailsState extends State<RecordDetails> {
       await widget.onChanged();
       await load();
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = friendlyError(e));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -80,7 +80,7 @@ class _RecordDetailsState extends State<RecordDetails> {
           mounted)
         setState(() => error = 'No UPI app could open this payment');
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = friendlyError(e));
     }
   }
 

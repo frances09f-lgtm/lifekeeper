@@ -133,6 +133,17 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 300)),
       );
       await settle(tester, find.text('₹1,200'));
+      // Mark paid runs real SQLite I/O; keep pumping until the alert clears.
+      for (
+        var i = 0;
+        i < 100 && find.text('Electricity is overdue').evaluate().isNotEmpty;
+        i++
+      ) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(find.text('Electricity is overdue'), findsNothing);
       expect(find.text('₹1,200'), findsWidgets);
       await tester.tap(find.text('Insights'));

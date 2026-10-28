@@ -136,7 +136,7 @@ class _RecordEditorState extends State<RecordEditor> {
           added.add(attachment['file'] as String);
         });
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = friendlyError(e));
     }
   }
 
@@ -162,7 +162,7 @@ class _RecordEditorState extends State<RecordEditor> {
         warnings = result.draft.warnings;
       }
     } catch (e) {
-      error = '$e';
+      error = friendlyError(e);
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -226,7 +226,7 @@ class _RecordEditorState extends State<RecordEditor> {
       saved = true;
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) setState(() => error = friendlyError(e));
     } finally {
       if (mounted) setState(() => saving = false);
     }

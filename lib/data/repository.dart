@@ -7,46 +7,133 @@ import 'package:sqflite/sqflite.dart';
 
 import '../domain/record.dart';
 
+/// User-facing text for an error from a repository call. Storage errors get a
+/// calm message instead of the raw `DatabaseException(...)` text.
+String friendlyError(Object e) {
+  if (e is DatabaseException) {
+    return "Couldn't reach your saved data just now. Nothing was lost. Tap Retry.";
+  }
+  return '$e';
+}
+
 class Repository {
-  final Database db;
   final Directory root;
-  Repository(this.db, this.root);
+  final DatabaseFactory _factory;
+  final String _path;
+  Database _db;
+  Future<Database>? _opening;
+
+  Repository._(this._factory, this._path, this._db, this.root);
+
+  /// The handle in use right now. It can be closed underneath us (for example
+  /// by another Flutter engine in the same process), so repository methods go
+  /// through [database] / [withDatabase], which reopen transparently.
+  Database get db => _db;
+
+  static String pathIn(Directory root) => p.join(root.path, 'lifekeeper.db');
+
+  /// Every opener (the UI, the notification-action isolate, the boot/time
+  /// change receiver) gets its OWN native connection (`singleInstance: false`).
+  /// With the default shared instance, sqflite's Android plugin hands every
+  /// engine in the process the same connection, so a background engine's
+  /// close() closed the UI's database ("database_closed").
+  static Future<Database> _openRaw(
+    DatabaseFactory factory,
+    String path,
+  ) => factory.openDatabase(
+    path,
+    options: OpenDatabaseOptions(
+      version: 1,
+      singleInstance: false,
+      onConfigure: (db) async {
+        try {
+          // Two connections may write at once (UI + notification action).
+          await db.rawQuery('PRAGMA busy_timeout = 5000');
+        } catch (_) {}
+      },
+      onCreate: (db, v) async {
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS records (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL, due TEXT, status TEXT NOT NULL, category TEXT NOT NULL)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS records_due_status ON records(status,due)',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS records_category ON records(category)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS payments (id INTEGER PRIMARY KEY AUTOINCREMENT, recordId INTEGER NOT NULL, occurrence TEXT NOT NULL, paidAt TEXT NOT NULL, amount INTEGER, currency TEXT NOT NULL, title TEXT NOT NULL, category TEXT NOT NULL, UNIQUE(recordId,occurrence))',
+        );
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS payments_date ON payments(paidAt,currency)',
+        );
+        await db.execute(
+          'CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+        );
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        throw StateError('Unsupported migration $oldVersion to $newVersion');
+      },
+    ),
+  );
+
   static Future<Repository> open({
     DatabaseFactory? factory,
     Directory? directory,
   }) async {
     final root = directory ?? await getApplicationSupportDirectory();
     await root.create(recursive: true);
-    final database = await (factory ?? databaseFactory).openDatabase(
-      p.join(root.path, 'lifekeeper.db'),
-      options: OpenDatabaseOptions(
-        version: 1,
-        onCreate: (db, v) async {
-          await db.execute(
-            'CREATE TABLE records (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL, due TEXT, status TEXT NOT NULL, category TEXT NOT NULL)',
-          );
-          await db.execute(
-            'CREATE INDEX records_due_status ON records(status,due)',
-          );
-          await db.execute(
-            'CREATE INDEX records_category ON records(category)',
-          );
-          await db.execute(
-            'CREATE TABLE payments (id INTEGER PRIMARY KEY AUTOINCREMENT, recordId INTEGER NOT NULL, occurrence TEXT NOT NULL, paidAt TEXT NOT NULL, amount INTEGER, currency TEXT NOT NULL, title TEXT NOT NULL, category TEXT NOT NULL, UNIQUE(recordId,occurrence))',
-          );
-          await db.execute(
-            'CREATE INDEX payments_date ON payments(paidAt,currency)',
-          );
-          await db.execute(
-            'CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)',
-          );
-        },
-        onUpgrade: (db, oldVersion, newVersion) async {
-          throw StateError('Unsupported migration $oldVersion to $newVersion');
-        },
-      ),
-    );
-    return Repository(database, root);
+    final f = factory ?? databaseFactory;
+    final path = pathIn(root);
+    final database = await _openRaw(f, path);
+    return Repository._(f, path, database, root);
+  }
+
+  /// An open handle, reopening if the current one was closed. Concurrent
+  /// callers share one reopen.
+  Future<Database> database() async {
+    if (_db.isOpen) return _db;
+    return _reopen(_db);
+  }
+
+  Future<Database> _reopen(Database stale) {
+    if (!identical(stale, _db)) return Future.value(_db);
+    return _opening ??= () async {
+      try {
+        try {
+          if (stale.isOpen) await stale.close();
+        } catch (_) {}
+        final fresh = await _openRaw(_factory, _path);
+        _db = fresh;
+        return fresh;
+      } finally {
+        _opening = null;
+      }
+    }();
+  }
+
+  /// Runs [op] on an open handle. If the handle turns out to be closed
+  /// natively (the Dart side can still think it is open), reopen once and
+  /// retry; a closed connection ran nothing, so the retry is safe.
+  Future<T> withDatabase<T>(Future<T> Function(Database db) op) async {
+    final first = await database();
+    try {
+      return await op(first);
+    } on DatabaseException catch (e) {
+      if (!e.isDatabaseClosedError()) rethrow;
+      return op(await _reopen(first));
+    }
+  }
+
+  /// Closes this repository's own connection. A later call reopens it.
+  Future<void> close() async {
+    final pending = _opening;
+    if (pending != null) {
+      try {
+        await pending;
+      } catch (_) {}
+    }
+    if (_db.isOpen) await _db.close();
   }
 
   AdminRecord decode(Map<String, Object?> row) => AdminRecord(
@@ -54,9 +141,13 @@ class Repository {
     id: row['id'] as int,
   );
   Future<List<AdminRecord>> records() async =>
-      (await db.query('records', orderBy: 'due, id')).map(decode).toList();
+      (await withDatabase((db) => db.query('records', orderBy: 'due, id')))
+          .map(decode)
+          .toList();
   Future<AdminRecord?> get(int id) async {
-    final rows = await db.query('records', where: 'id=?', whereArgs: [id]);
+    final rows = await withDatabase(
+      (db) => db.query('records', where: 'id=?', whereArgs: [id]),
+    );
     return rows.isEmpty ? null : decode(rows.first);
   }
 
@@ -101,66 +192,75 @@ class Repository {
       data['priceHistory'] = history;
     }
     final r = AdminRecord(data, id: record.id);
-    if (r.id == null) return db.insert('records', row(r));
-    await db.update('records', row(r), where: 'id=?', whereArgs: [r.id]);
+    if (r.id == null) return withDatabase((db) => db.insert('records', row(r)));
+    await withDatabase(
+      (db) => db.update('records', row(r), where: 'id=?', whereArgs: [r.id]),
+    );
     return r.id!;
   }
 
   Future<bool> complete(int id, {DateTime? at}) async {
     final now = at ?? DateTime.now();
-    return db.transaction((tx) async {
-      final rows = await tx.query('records', where: 'id=?', whereArgs: [id]);
-      if (rows.isEmpty) return false;
-      final r = decode(rows.first);
-      if (r.status != 'active') return false;
-      final last = r.instant('completed');
-      if (last != null &&
-          now.difference(last).abs() < const Duration(seconds: 3))
-        return false;
-      final occurrence = r.text('due', r.text('created'));
-      final existing = await tx.query(
-        'payments',
-        where: 'recordId=? AND occurrence=?',
-        whereArgs: [id, occurrence],
-      );
-      if (existing.isNotEmpty) {
+    return withDatabase(
+      (db) => db.transaction((tx) async {
+        final rows = await tx.query('records', where: 'id=?', whereArgs: [id]);
+        if (rows.isEmpty) return false;
+        final r = decode(rows.first);
+        if (r.status != 'active') return false;
+        final last = r.instant('completed');
+        if (last != null &&
+            now.difference(last).abs() < const Duration(seconds: 3))
+          return false;
+        final occurrence = r.text('due', r.text('created'));
+        final existing = await tx.query(
+          'payments',
+          where: 'recordId=? AND occurrence=?',
+          whereArgs: [id, occurrence],
+        );
+        if (existing.isNotEmpty) {
+          await tx.update(
+            'records',
+            row(
+              r.copy({'status': 'completed', 'updated': now.toIso8601String()}),
+            ),
+            where: 'id=?',
+            whereArgs: [id],
+          );
+          return false;
+        }
+        await tx.insert('payments', {
+          'recordId': id,
+          'occurrence': occurrence,
+          'paidAt': now.toIso8601String(),
+          'amount': r.amount,
+          'currency': r.currency,
+          'title': r.title,
+          'category': r.category,
+        });
+        final history = List<dynamic>.from(
+          r.data['completionHistory'] as List<dynamic>? ?? [],
+        );
+        history.add({'occurrence': occurrence, 'at': now.toIso8601String()});
+        final next = r.nextDue();
+        final updated = r.copy({
+          'status': next == null ? 'completed' : 'active',
+          'due': next == null ? r.text('due') : dateText(next),
+          'completed': now.toIso8601String(),
+          'updated': now.toIso8601String(),
+          'completionHistory': history,
+          'snoozeUntil': '',
+          'snoozeCount': 0,
+          'dismissUntil': '',
+        });
         await tx.update(
           'records',
-          row(
-            r.copy({'status': 'completed', 'updated': now.toIso8601String()}),
-          ),
+          row(updated),
           where: 'id=?',
           whereArgs: [id],
         );
-        return false;
-      }
-      await tx.insert('payments', {
-        'recordId': id,
-        'occurrence': occurrence,
-        'paidAt': now.toIso8601String(),
-        'amount': r.amount,
-        'currency': r.currency,
-        'title': r.title,
-        'category': r.category,
-      });
-      final history = List<dynamic>.from(
-        r.data['completionHistory'] as List<dynamic>? ?? [],
-      );
-      history.add({'occurrence': occurrence, 'at': now.toIso8601String()});
-      final next = r.nextDue();
-      final updated = r.copy({
-        'status': next == null ? 'completed' : 'active',
-        'due': next == null ? r.text('due') : dateText(next),
-        'completed': now.toIso8601String(),
-        'updated': now.toIso8601String(),
-        'completionHistory': history,
-        'snoozeUntil': '',
-        'snoozeCount': 0,
-        'dismissUntil': '',
-      });
-      await tx.update('records', row(updated), where: 'id=?', whereArgs: [id]);
-      return true;
-    });
+        return true;
+      }),
+    );
   }
 
   Future<void> patch(int id, Map<String, dynamic> fields) async {
@@ -192,9 +292,11 @@ class Repository {
 
   Future<void> delete(int id) async {
     final r = await get(id);
-    await db.transaction((tx) async {
-      await tx.delete('records', where: 'id=?', whereArgs: [id]);
-    });
+    await withDatabase(
+      (db) => db.transaction((tx) async {
+        await tx.delete('records', where: 'id=?', whereArgs: [id]);
+      }),
+    );
     for (final a in r?.attachments ?? <Map<String, dynamic>>[]) {
       await removeAttachment(a['file'] as String);
     }
@@ -225,10 +327,11 @@ class Repository {
     );
   }
 
-  Future<List<Map<String, Object?>>> payments() =>
-      db.query('payments', orderBy: 'paidAt DESC, id DESC');
+  Future<List<Map<String, Object?>>> payments() => withDatabase(
+    (db) => db.query('payments', orderBy: 'paidAt DESC, id DESC'),
+  );
   Future<Map<String, dynamic>> settings() async {
-    final rows = await db.query('settings');
+    final rows = await withDatabase((db) => db.query('settings'));
     return {
       for (final r in rows)
         r['key'] as String: jsonDecode(r['value'] as String),
@@ -236,10 +339,12 @@ class Repository {
   }
 
   Future<void> setting(String key, dynamic value) async {
-    await db.insert('settings', {
-      'key': key,
-      'value': jsonEncode(value),
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await withDatabase(
+      (db) => db.insert('settings', {
+        'key': key,
+        'value': jsonEncode(value),
+      }, conflictAlgorithm: ConflictAlgorithm.replace),
+    );
   }
 
   File file(String name) {
@@ -349,27 +454,29 @@ class Repository {
         if (DateTime.tryParse(payment['paidAt'] as String) == null)
           throw ArgumentError('Invalid payment date');
       }
-      await db.transaction((tx) async {
-        await tx.delete('records');
-        await tx.delete('payments');
-        await tx.delete('settings');
-        for (final r in rs) {
-          final record = AdminRecord(
-            Map<String, dynamic>.from(r['data'] as Map),
-            id: r['id'] as int,
-          );
-          await tx.insert('records', {'id': record.id, ...row(record)});
-        }
-        for (final payment in ps) {
-          await tx.insert('payments', payment);
-        }
-        for (final e in st.entries) {
-          await tx.insert('settings', {
-            'key': e.key,
-            'value': jsonEncode(e.value),
-          });
-        }
-      });
+      await withDatabase(
+        (db) => db.transaction((tx) async {
+          await tx.delete('records');
+          await tx.delete('payments');
+          await tx.delete('settings');
+          for (final r in rs) {
+            final record = AdminRecord(
+              Map<String, dynamic>.from(r['data'] as Map),
+              id: r['id'] as int,
+            );
+            await tx.insert('records', {'id': record.id, ...row(record)});
+          }
+          for (final payment in ps) {
+            await tx.insert('payments', payment);
+          }
+          for (final e in st.entries) {
+            await tx.insert('settings', {
+              'key': e.key,
+              'value': jsonEncode(e.value),
+            });
+          }
+        }),
+      );
     } catch (_) {
       for (final f in written) {
         if (await f.exists()) await f.delete();
@@ -393,11 +500,13 @@ class Repository {
   }
 
   Future<void> clear() async {
-    await db.transaction((tx) async {
-      await tx.delete('records');
-      await tx.delete('payments');
-      await tx.delete('settings');
-    });
+    await withDatabase(
+      (db) => db.transaction((tx) async {
+        await tx.delete('records');
+        await tx.delete('payments');
+        await tx.delete('settings');
+      }),
+    );
     await cleanupFiles();
   }
 
@@ -432,7 +541,9 @@ class Repository {
   Future<void> removeDemo() async {
     for (final r in (await records()).where((r) => r.flag('demo'))) {
       await delete(r.id!);
-      await db.delete('payments', where: 'recordId=?', whereArgs: [r.id]);
+      await withDatabase(
+        (db) => db.delete('payments', where: 'recordId=?', whereArgs: [r.id]),
+      );
     }
   }
 }

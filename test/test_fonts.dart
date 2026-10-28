@@ -8,7 +8,8 @@ import 'package:flutter/services.dart';
 String flutterMaterialFontsPath() {
   final config = File('.dart_tool/package_config.json').absolute;
   final packages =
-      (jsonDecode(config.readAsStringSync()) as Map<String, dynamic>)['packages']
+      (jsonDecode(config.readAsStringSync())
+              as Map<String, dynamic>)['packages']
           as List;
   final flutter = packages.cast<Map<String, dynamic>>().firstWhere(
     (p) => p['name'] == 'flutter',

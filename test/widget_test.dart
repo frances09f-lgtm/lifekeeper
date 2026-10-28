@@ -77,9 +77,9 @@ void main() {
     expect(find.text('Scan bill'), findsOneWidget);
     expect(find.text('Quick add'), findsOneWidget);
     expect(find.text('Calendar'), findsOneWidget);
-    await tester.tap(find.byTooltip('Add record'));
+    await tester.tap(find.byTooltip('Add expense'));
     await settle(tester, find.text('Bill / record name'));
-    expect(find.text('Add record'), findsOneWidget);
+    expect(find.text('Add expense'), findsOneWidget);
     expect(find.text('Bill / record name'), findsOneWidget);
     await tester.enterText(find.byType(TextFormField).first, 'My bill');
     await tester.pumpWidget(const SizedBox());

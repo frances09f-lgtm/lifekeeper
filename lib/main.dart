@@ -814,7 +814,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
               ? null
               : FloatingActionButton(
                   onPressed: () => edit(),
-                  tooltip: 'Add record',
+                  tooltip: 'Add expense',
                   child: const Icon(Icons.add, size: 28),
                 ),
           bottomNavigationBar: DecoratedBox(

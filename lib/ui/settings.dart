@@ -307,10 +307,6 @@ extension SettingsView on _LifeKeeperState {
         Column(
           children: [
             TextButton(
-              onPressed: () => action(() => repo.demo()),
-              child: const Text('Add labeled demo records'),
-            ),
-            TextButton(
               onPressed: () => action(() => repo.removeDemo()),
               child: const Text('Remove demo records'),
             ),

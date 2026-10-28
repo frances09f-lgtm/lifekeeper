@@ -39,6 +39,12 @@ jobs:
           name: coverage-${{ github.sha }}
           path: coverage/lcov.info
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: home-render-${{ github.sha }}
+          path: render-out/*.png
+          if-no-files-found: ignore
   signed-apk:
     if: github.event_name != 'pull_request'
     needs: checks

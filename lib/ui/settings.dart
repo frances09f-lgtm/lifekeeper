@@ -330,10 +330,24 @@ extension SettingsView on _LifeKeeperState {
           ],
         ),
       ),
+      title('App updates'),
+      card(
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.system_update_alt),
+          title: const Text('Check for updates'),
+          subtitle: const Text(
+            'Fetches the newest release and offers to install it. '
+            'Nothing checks in the background; the network is only used '
+            'when you tap this.',
+          ),
+          onTap: () => checkUpdateManually(context),
+        ),
+      ),
       title('About'),
       card(
         const Text(
-          'LifeKeeper 1.1.5\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
+          'LifeKeeper 1.1.6\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nUpdate checks run only when you tap Check for updates\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
         ),
       ),
       TextButton(

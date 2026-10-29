@@ -12,7 +12,11 @@ void main() {
     expect(manifest, contains('SystemReceiver'));
     expect(manifest, contains('TIMEZONE_CHANGED'));
     expect(manifest, contains('RECEIVE_BOOT_COMPLETED'));
-    expect(manifest, contains('INTERNET" tools:node="remove'));
+    // In-app updates (user request): the app checks GitHub for a newer
+    // release from Settings and hands the APK to the system installer.
+    expect(manifest, contains('android.permission.INTERNET'));
+    expect(manifest, isNot(contains('INTERNET" tools:node="remove')));
+    expect(manifest, contains('REQUEST_INSTALL_PACKAGES'));
     expect(manifest, isNot(contains('READ_SMS')));
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
     expect(gradle, contains('privateRelease'));

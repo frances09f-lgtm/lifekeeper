@@ -348,17 +348,19 @@ class _RecordEditorState extends State<RecordEditor> {
               label: const Text('Retake'),
             ),
           for (final entry in fields.entries.where(
-            (e) => ['title', 'amountInput', 'due'].contains(e.key),
+            (e) => ['title', 'amountInput'].contains(e.key),
           ))
             inputField(entry),
           ExpansionTile(
             title: const Text('More options'),
-            subtitle: const Text('Repeat, reminders, notes and attachments'),
+            subtitle: const Text(
+              'Due date, issuer, repeat, reminders, notes and attachments',
+            ),
             maintainState: true,
             tilePadding: EdgeInsets.zero,
             children: [
               for (final entry in fields.entries.where(
-                (e) => !['title', 'amountInput', 'due'].contains(e.key),
+                (e) => !['title', 'amountInput'].contains(e.key),
               ))
                 inputField(entry),
               DropdownButtonFormField<String>(

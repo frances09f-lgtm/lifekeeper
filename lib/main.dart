@@ -21,6 +21,7 @@ import 'domain/bill_rules.dart';
 import 'security/security.dart';
 import 'services/notifications.dart';
 import 'services/scanner.dart';
+import 'update/app_update.dart';
 part 'ui/editor.dart';
 part 'ui/details.dart';
 part 'ui/settings.dart';

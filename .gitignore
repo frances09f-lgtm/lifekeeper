@@ -23,3 +23,7 @@ signing-secrets.json
 .idea/
 *.iml
 .DS_Store
+
+# Local artifacts
+.flutter-plugins-dependencies
+render-out/

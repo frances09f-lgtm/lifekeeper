@@ -260,19 +260,19 @@ Future<void> showUpdateDialog(
     context: context,
     barrierDismissible: false,
     builder: (_) =>
-        _UpdateDialog(info: info, checker: checker ?? UpdateChecker()),
+        UpdateDialog(info: info, checker: checker ?? UpdateChecker()),
   );
 }
 
-class _UpdateDialog extends StatefulWidget {
+class UpdateDialog extends StatefulWidget {
   final UpdateInfo info;
   final UpdateChecker checker;
-  const _UpdateDialog({required this.info, required this.checker});
+  const UpdateDialog({super.key, required this.info, required this.checker});
   @override
-  State<_UpdateDialog> createState() => _UpdateDialogState();
+  State<UpdateDialog> createState() => _UpdateDialogState();
 }
 
-class _UpdateDialogState extends State<_UpdateDialog> {
+class _UpdateDialogState extends State<UpdateDialog> {
   _Phase phase = _Phase.available;
   int received = 0;
   int? total;

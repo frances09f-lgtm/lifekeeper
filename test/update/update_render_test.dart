@@ -86,8 +86,9 @@ void main() {
     await tester.runAsync(() async => repo.db.close());
   });
 
-  testWidgets('Update available dialog renders version, notes and actions',
-      (tester) async {
+  testWidgets('Update available dialog renders version, notes and actions', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     const info = UpdateInfo(

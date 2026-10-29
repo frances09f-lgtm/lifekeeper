@@ -103,8 +103,7 @@ void main() {
       addTearDown(() => tmp.deleteSync(recursive: true));
       final checker = UpdateChecker(
         client: MockClient.streaming(
-          (req, body) async =>
-              http.StreamedResponse(const Stream.empty(), 404),
+          (req, body) async => http.StreamedResponse(const Stream.empty(), 404),
         ),
         cacheDir: () async => tmp,
       );
@@ -126,8 +125,9 @@ void main() {
       pageUrl: 'https://github.com/x/releases/tag/v1.1.5',
     );
 
-    testWidgets('available phase shows version, notes and actions',
-        (tester) async {
+    testWidgets('available phase shows version, notes and actions', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: SizedBox())),
       );
@@ -183,16 +183,16 @@ void main() {
       await shown;
     });
 
-    testWidgets('install failure shows error with retry and page fallback',
-        (tester) async {
+    testWidgets('install failure shows error with retry and page fallback', (
+      tester,
+    ) async {
       final checker = UpdateChecker(
         currentVersion: () async => '1.1.4',
-        downloader:
-            (
-              info, {
-              void Function(int received, int? total)? onProgress,
-              Stream<void>? cancelToken,
-            }) async => throw StateError('installer did not open'),
+        downloader: (
+          info, {
+          void Function(int received, int? total)? onProgress,
+          Stream<void>? cancelToken,
+        }) async => throw StateError('installer did not open'),
       );
       await tester.pumpWidget(
         const MaterialApp(home: Scaffold(body: SizedBox())),

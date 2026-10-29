@@ -118,8 +118,7 @@ class UpdateChecker {
   /// check fails (offline, rate limit): callers treat null as "no update".
   /// Use [fetchLatestDetailed] when the caller must tell a failed check
   /// apart from "up to date".
-  Future<UpdateInfo?> fetchLatest() async =>
-      (await fetchLatestDetailed()).info;
+  Future<UpdateInfo?> fetchLatest() async => (await fetchLatestDetailed()).info;
 
   /// Like [fetchLatest] but reports [UpdateCheckStatus.failed] when the
   /// check itself did not complete, so a user-initiated check can say so
@@ -342,15 +341,12 @@ class _UpdateDialogState extends State<UpdateDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
-            child: Text(
-              switch (phase) {
-                _Phase.available => 'LifeKeeper $v is available',
-                _Phase.downloading => 'Downloading LifeKeeper $v...',
-                _Phase.installing => 'Opening installer...',
-                _Phase.error => 'Update failed',
-              },
-              style: TextStyle(color: dim, fontSize: 13),
-            ),
+            child: Text(switch (phase) {
+              _Phase.available => 'LifeKeeper $v is available',
+              _Phase.downloading => 'Downloading LifeKeeper $v...',
+              _Phase.installing => 'Opening installer...',
+              _Phase.error => 'Update failed',
+            }, style: TextStyle(color: dim, fontSize: 13)),
           ),
           if (phase == _Phase.downloading) ...[
             const SizedBox(height: 12),

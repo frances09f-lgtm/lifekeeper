@@ -48,8 +48,9 @@ void main() {
     });
   }
 
-  testWidgets('Add record shows only name and amount, details in dropdown',
-      (tester) async {
+  testWidgets('Add record shows only name and amount, details in dropdown', (
+    tester,
+  ) async {
     final repo = await openRepo(tester, 'collapsed');
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));

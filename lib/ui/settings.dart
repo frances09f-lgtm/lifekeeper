@@ -354,7 +354,7 @@ extension SettingsView on _LifeKeeperState {
         onPressed: () => showLicensePage(
           context: context,
           applicationName: 'LifeKeeper',
-          applicationVersion: '1.1.5',
+          applicationVersion: '1.1.6',
         ),
         child: const Text('Open-source licences'),
       ),

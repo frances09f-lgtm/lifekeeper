@@ -91,7 +91,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     const info = UpdateInfo(
-      version: '1.1.5',
+      version: '1.1.6',
       notes: 'Add record shows only name and amount first.\nIn-app updates.',
       apkUrl: 'https://github.com/x/LifeKeeper-arm64.apk',
       pageUrl: 'https://github.com/x/releases/tag/v1.1.5',
@@ -112,7 +112,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Software Update'), findsOneWidget);
-    expect(find.text('LifeKeeper 1.1.5 is available'), findsOneWidget);
+    expect(find.text('LifeKeeper 1.1.6 is available'), findsOneWidget);
     expect(find.text('Later'), findsOneWidget);
     expect(find.text('Update'), findsOneWidget);
     await capture(tester, k, 'update-dialog-available');

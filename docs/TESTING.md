@@ -5,7 +5,7 @@ Nothing is phone-tested.
 CI must pass fatal analyze, meaningful rule/recurrence/reminder/repository/backup/widget tests, signed ARM64 build and exact signer verification for the same commit before release. No release from failed or unobserved CI. Native configuration tests check required permissions/receivers and private signing; they do not prove real delivery.
 
 ## Phone checklist
-- Fresh install without internet. No demo data unless opted in. All tabs, empty states, add/edit/search/filter/sort/delete/duplicate/archive/reopen.
+- Fresh install without internet. No demo, sample or test data anywhere. All tabs, empty states, add/edit/search/filter/sort/delete/duplicate/archive/reopen.
 - Scan camera and gallery offline. Cancellation, camera unavailable/permission denial, large and unreadable image, process death recovery. Check every filled date/amount. Invoice date must never become due date. Missing fields remain blank. Retake cancels prior private image. Save only after review.
 - January 31 monthly completion through February and March; February 29 yearly. Mark paid once, verify actual payment history and per-currency budget/charts. Repeated taps must not add duplicates for one occurrence.
 - Reminder permission denial, exact alarm denial/inexact fallback, quiet-hours midnight rollover, snooze, Complete/Open/Snooze actions, CRUD cancellation, reboot, time/timezone change, background/OEM battery limits. No guaranteed delivery. Current digest plans 30 days ahead and refreshes with app/system events.
@@ -47,3 +47,9 @@ CI must pass fatal analyze, meaningful rule/recurrence/reminder/repository/backu
 - Database and attachments are app-private but are not encrypted at rest by this app. Android device encryption depends on the device. PIN is a screen lock, PBKDF2 salted hash lives in secure storage. Exports are AES-256-GCM authenticated encryption with PBKDF2.
 - Biometric unlock is not included. Widget is an in-app preview only. SMS demo parses pasted/sample text only, no SMS permission. Bundled Latin ML Kit OCR is the only scanning model; no LLM, cloud, account, backend or language controls.
 - Notification schedules depend on OS/OEM behavior and permissions. Native restart/time-change recovery needs device validation. Reminders are planned up to a year ahead; digest up to 30 days. Open app to refresh health.
+
+## 1.1.5 checks (no test data)
+- Removed from the app: the demo-record seeder and "Remove demo records" button, the "SMS bill demo" chip and its pre-filled Jio / ₹799 / account 123456789 example (now "Paste bill text", empty), the empty-Home "Popular to add" list (Electricity, Jio recharge, Netflix, Rent, Car insurance, Phone warranty), the Step 1 / Scan a bill / Track a free trial starter cards and tip card, the notification preview's "Jio postpaid · ₹799" placeholder, "Send test notification", the "Demo ·" labels and the "jio bill 799" quick-add example.
+- Empty Home: ₹0 total card ("No bills yet") and one "Add your first bill" card. Nothing else.
+- Database schema 1 → 2 on first open of 1.1.5 (any engine: UI, notification action, boot receiver). The upgrade deletes only rows LifeKeeper created as samples: records with the seeder's `demo: true` flag, the untouched SMS-demo example (title Jio, 79900, account 123456789 and its own note), their payments, and payments titled "Demo electricity bill"/"Demo warranty" whose record no longer exists. Restoring an older backup applies the same rule. Everything else, settings included, is untouched (test/sample_data_migration_test.dart).
+- Needs device validation: install over 1.1.4 with existing bills, then open.

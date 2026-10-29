@@ -30,7 +30,7 @@ void main() {
         'category': 'Bill',
         'amount': 25000,
         'recordId': 4,
-        'title': 'Demo bill',
+        'title': 'Demo electricity bill',
       },
       {
         'currency': 'INR',
@@ -42,6 +42,21 @@ void main() {
     ];
     expect(paymentTotal(realPayments(values, 'INR', demoIds: {5})), 79900);
     expect(paymentTotal(realPayments(values, 'USD')), 1000);
+    // A person's own bill that merely starts with "Demo" still counts.
+    expect(
+      paymentTotal(
+        realPayments([
+          {
+            'currency': 'INR',
+            'category': 'Bill',
+            'amount': 30000,
+            'recordId': 9,
+            'title': 'Demo class fees',
+          },
+        ], 'INR'),
+      ),
+      30000,
+    );
     expect(countsAsPayment('Electricity'), true);
     expect(countsAsPayment('ID'), false);
   });

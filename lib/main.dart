@@ -602,24 +602,21 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> quick({bool sms = false}) async {
+  Future<void> quick({bool paste = false}) async {
     final text = await prompt(
       navigator.currentContext!,
-      sms ? 'SMS bill demo' : 'Quick add',
-      sms
-          ? 'Paste bill text or use the sample. This does not read your SMS inbox.'
-          : 'Example: jio bill 799 on 5 nov monthly',
-      initial: sms
-          ? 'Jio\nAmount due: INR 799\nDue date: 25 November 2026\nAccount no: 123456789'
-          : '',
+      paste ? 'Paste bill text' : 'Quick add',
+      paste
+          ? 'Paste the text of a bill or SMS. LifeKeeper does not read your SMS inbox.'
+          : 'Type the bill name, amount and due date',
       multiline: true,
     );
     if (text == null || text.trim().isEmpty) return;
-    final draft = parseBill(text, DateTime.now(), quick: !sms);
+    final draft = parseBill(text, DateTime.now(), quick: !paste);
     await edit(
       initial: {
         ...draft.fields,
-        if (sms) 'notes': 'Pasted text / SMS demo, review before saving',
+        if (paste) 'notes': 'Pasted bill text, review before saving',
       },
       warnings: draft.warnings,
     );
@@ -1171,7 +1168,7 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${r.flag('demo') ? 'Demo · ' : ''}${r.category} · $when',
+                                '${r.category} · $when',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -1541,8 +1538,8 @@ class _LifeKeeperState extends State<LifeKeeper> with WidgetsBindingObserver {
           ),
           ActionChip(
             avatar: const Icon(Icons.sms_outlined, size: 16),
-            label: const Text('SMS bill demo'),
-            onPressed: () => quick(sms: true),
+            label: const Text('Paste bill text'),
+            onPressed: () => quick(paste: true),
           ),
         ],
       ),

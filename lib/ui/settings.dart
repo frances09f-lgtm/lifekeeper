@@ -132,12 +132,6 @@ extension SettingsView on _LifeKeeperState {
               child: const Text('Grant notification and alarm access'),
             ),
             TextButton(
-              onPressed: () => action(() async {
-                await widget.notifications?.test();
-              }),
-              child: const Text('Send test notification'),
-            ),
-            TextButton(
               onPressed: () =>
                   widget.notifications?.plugin.openAppNotificationSettings(),
               child: const Text('Open system notification settings'),
@@ -314,10 +308,6 @@ extension SettingsView on _LifeKeeperState {
         Column(
           children: [
             TextButton(
-              onPressed: () => action(() => repo.removeDemo()),
-              child: const Text('Remove demo records'),
-            ),
-            TextButton(
               onPressed: () async {
                 if (await confirm(
                   context,
@@ -343,14 +333,14 @@ extension SettingsView on _LifeKeeperState {
       title('About'),
       card(
         const Text(
-          'LifeKeeper 1.1.4\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
+          'LifeKeeper 1.1.5\nOffline bills, renewals and warranties\nNo account, backend, cloud, language controls or AI model\nBundled Latin Google ML Kit OCR plus editable deterministic rules\nNo SMS inbox access. Widget is a preview only. UPI return is not proof of payment.\nNothing is phone-tested.\nManual checks: camera/OCR, airplane mode, notification permissions/actions/delivery, reboot and timezone changes, PIN/background lock, encrypted restore, UPI and PDF preview.',
         ),
       ),
       TextButton(
         onPressed: () => showLicensePage(
           context: context,
           applicationName: 'LifeKeeper',
-          applicationVersion: '1.1.4',
+          applicationVersion: '1.1.5',
         ),
         child: const Text('Open-source licences'),
       ),
@@ -402,7 +392,7 @@ extension SettingsView on _LifeKeeperState {
             ),
             const SizedBox(height: 10),
             Text(
-              sample?.title ?? 'Jio postpaid',
+              sample?.title ?? 'Your next bill',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -410,7 +400,7 @@ extension SettingsView on _LifeKeeperState {
             const SizedBox(height: 2),
             Text(
               sample == null
-                  ? 'Due today · ₹799 · Payment not marked as paid'
+                  ? 'Due today · Payment not marked as paid'
                   : 'Due ${prettyDate(sample.due)}${sample.amount == null ? '' : ' · ${rupees(sample.amount!, sample.currency)}'} · Payment not marked as paid',
               style: theme.textTheme.bodyMedium,
             ),

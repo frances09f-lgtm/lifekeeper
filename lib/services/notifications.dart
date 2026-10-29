@@ -170,20 +170,4 @@ class NotificationService {
       await repo.setting('notificationHealth', health);
     }
   }
-
-  Future<void> test() async {
-    await plugin.show(
-      id: 1999999999,
-      title: 'LifeKeeper test',
-      body: 'This is a local test notification',
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'test',
-          'Notification tests',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-      ),
-    );
-  }
 }

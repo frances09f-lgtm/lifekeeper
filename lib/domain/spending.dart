@@ -13,7 +13,10 @@ List<Map<String, Object?>> realPayments(
           p['amount'] is num &&
           countsAsPayment(p['category'] as String) &&
           !demoIds.contains(p['recordId']) &&
-          !(p['title'] as String).startsWith('Demo '),
+          !const {
+            'Demo electricity bill',
+            'Demo warranty',
+          }.contains(p['title']),
     )
     .toList();
 int paymentTotal(List<Map<String, Object?>> payments) =>

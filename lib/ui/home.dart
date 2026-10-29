@@ -316,6 +316,8 @@ extension HomeView on _LifeKeeperState {
     );
   }
 
+  /// First-run Home: the real (zero) total card and one prompt. No example
+  /// bills, suggestions or placeholder amounts.
   List<Widget> emptyHome(BuildContext context, MonthSummary summary) {
     final theme = Theme.of(context);
     return [
@@ -324,87 +326,15 @@ extension HomeView on _LifeKeeperState {
       const SizedBox(height: 12),
       tipCard(
         context,
-        key: const Key('home-welcome'),
-        icon: Icons.notifications_active_outlined,
-        title: 'Never miss a due date',
-        body: 'Add a bill and get a reminder before it is due. It all stays on this phone.',
+        key: const Key('home-add-first'),
+        icon: Icons.add_circle_outline_rounded,
+        title: 'Add your first bill',
+        body: 'Get a reminder before it is due. It all stays on this phone.',
         action: 'Add bill',
         onPressed: () => edit(),
       ),
-      sectionHeader(
-        context,
-        'Next payments',
-        trailing: Text(
-          'Start here',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-      const SizedBox(height: 6),
-      SizedBox(
-        height: 186,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          children: [
-            starterCard(
-              context,
-              key: const Key('home-add-first'),
-              icon: Icons.add_rounded,
-              chip: 'Step 1',
-              title: 'Add your first bill',
-              subtitle: 'Rent, EMI, power',
-              action: 'Add bill',
-              onPressed: () => edit(),
-            ),
-            const SizedBox(width: 12),
-            starterCard(
-              context,
-              icon: Icons.document_scanner_outlined,
-              chip: 'Fastest',
-              title: 'Scan a bill',
-              subtitle: 'Reads amount + date',
-              action: 'Scan',
-              onPressed: scan,
-            ),
-            const SizedBox(width: 12),
-            starterCard(
-              context,
-              icon: Icons.hourglass_bottom_rounded,
-              chip: 'Trials',
-              title: 'Track a free trial',
-              subtitle: 'Cancel in time',
-              action: 'Add trial',
-              onPressed: () => edit(initial: {'category': 'Subscription'}),
-            ),
-          ],
-        ),
-      ),
-      sectionHeader(
-        context,
-        'Popular to add',
-        trailing: Text(
-          'Tap to add',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-      const SizedBox(height: 6),
-      Card(
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            for (var i = 0; i < starters.length; i++) ...[
-              if (i > 0) const Divider(indent: 68),
-              starterRow(context, starters[i]),
-            ],
-          ],
-        ),
-      ),
       Padding(
-        padding: const EdgeInsets.only(top: 16, left: 4),
+        padding: const EdgeInsets.only(top: 6, left: 4),
         child: Text(
           'No account, no bank login · All data stays on this phone',
           style: theme.textTheme.bodySmall,
@@ -412,15 +342,6 @@ extension HomeView on _LifeKeeperState {
       ),
     ];
   }
-
-  static const starters = <(String, String, String, String)>[
-    ('Electricity', 'Bill', 'monthly', 'Monthly'),
-    ('Jio recharge', 'Bill', 'monthly', 'Monthly'),
-    ('Netflix', 'Subscription', 'monthly', 'Monthly'),
-    ('Rent', 'Bill', 'monthly', 'Monthly'),
-    ('Car insurance', 'Insurance', 'yearly', 'Yearly'),
-    ('Phone warranty', 'Warranty', 'none', 'Warranty'),
-  ];
 
   Widget tipCard(
     BuildContext context, {
@@ -480,188 +401,6 @@ extension HomeView on _LifeKeeperState {
               ),
               onPressed: onPressed,
               child: Text(action),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget starterCard(
-    BuildContext context, {
-    Key? key,
-    required IconData icon,
-    required String chip,
-    required String title,
-    required String subtitle,
-    required String action,
-    required VoidCallback onPressed,
-  }) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
-    final soft = dark ? LkColors.softDark : LkColors.soft;
-    return SizedBox(
-      key: key,
-      width: 158,
-      child: Card(
-        margin: EdgeInsets.zero,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: soft,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(icon, size: 21, color: scheme.primary),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: soft,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Text(
-                            chip,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              letterSpacing: 0,
-                              color: scheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 36),
-                      padding: EdgeInsets.zero,
-                    ),
-                    onPressed: onPressed,
-                    child: Text(action),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget starterRow(BuildContext context, (String, String, String, String) s) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final dark = theme.brightness == Brightness.dark;
-    return InkWell(
-      onTap: () => edit(
-        initial: {
-          'title': s.$1,
-          'category': s.$2,
-          if (s.$3 != 'none') 'repeat': s.$3,
-        },
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            BrandAvatar(title: s.$1, category: s.$2),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    s.$1,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(s.$2, style: theme.textTheme.bodySmall),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add_rounded, size: 18, color: scheme.primary),
-                    const SizedBox(width: 2),
-                    Text(
-                      'Add',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: scheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: dark ? LkColors.softDark : LkColors.soft,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: Text(
-                    s.$4,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      letterSpacing: 0,
-                      color: scheme.primary,
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

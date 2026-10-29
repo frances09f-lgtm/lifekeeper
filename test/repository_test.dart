@@ -131,10 +131,4 @@ void main() {
     expect((await repo.records()).single.title, 'keep me');
     expect(() => repo.file('../bad'), throwsArgumentError);
   });
-  test('Demo removal does not touch real records', () async {
-    await repo.save(AdminRecord({'title': 'real'}));
-    await repo.demo();
-    await repo.removeDemo();
-    expect((await repo.records()).single.title, 'real');
-  });
 }

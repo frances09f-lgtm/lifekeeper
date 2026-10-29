@@ -134,7 +134,7 @@ class _RecordDetailsState extends State<RecordDetails> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${r.flag('demo') ? 'Demo · ' : ''}${r.category} · ${capitalize(r.status)} · Record ${r.id}',
+                  '${r.category} · ${capitalize(r.status)} · Record ${r.id}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 16),

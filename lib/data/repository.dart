@@ -16,6 +16,67 @@ String friendlyError(Object e) {
   return '$e';
 }
 
+/// Schema version. 2 (LifeKeeper 1.1.5) removes sample/demo rows on upgrade;
+/// the tables themselves are unchanged from version 1.
+const schemaVersion = 2;
+
+/// Titles of the two records the old "Add labeled demo records" button
+/// (LifeKeeper 1.0.0 to 1.1.2) inserted. Every one of them also carried
+/// `demo: true`.
+const sampleSeedTitles = {'Demo electricity bill', 'Demo warranty'};
+
+/// True only for a record LifeKeeper itself created as sample data:
+/// - anything the demo seeder wrote (`demo: true`), or
+/// - the untouched pre-filled example from the old "SMS bill demo" chip
+///   (title Jio, INR 799, account 123456789, the chip's own note).
+/// A record the person typed, scanned or edited into their own bill is never
+/// matched.
+bool isSampleRecord(Map<String, dynamic> data) {
+  if (data['demo'] == true) return true;
+  return data['notes'] == 'Pasted text / SMS demo, review before saving' &&
+      '${data['title'] ?? ''}'.trim() == 'Jio' &&
+      '${data['account'] ?? ''}' == '123456789' &&
+      data['amount'] == 79900;
+}
+
+/// Deletes sample records, their payments, and payments the seeder's records
+/// left behind after a plain Delete (which keeps payment history). Returns
+/// the ids of the removed records. Runs inside the caller's transaction.
+Future<List<int>> purgeSampleData(DatabaseExecutor db) async {
+  final rows = await db.query('records', columns: ['id', 'data']);
+  final existing = <int>{};
+  final sample = <int>[];
+  for (final row in rows) {
+    final id = row['id'] as int;
+    existing.add(id);
+    Map<String, dynamic> data;
+    try {
+      data = Map<String, dynamic>.from(
+        jsonDecode(row['data'] as String) as Map,
+      );
+    } catch (_) {
+      continue;
+    }
+    if (isSampleRecord(data)) sample.add(id);
+  }
+  for (final id in sample) {
+    await db.delete('records', where: 'id=?', whereArgs: [id]);
+    await db.delete('payments', where: 'recordId=?', whereArgs: [id]);
+    existing.remove(id);
+  }
+  final payments = await db.query(
+    'payments',
+    columns: ['id', 'recordId', 'title'],
+  );
+  for (final p in payments) {
+    if (!existing.contains(p['recordId']) &&
+        sampleSeedTitles.contains(p['title'])) {
+      await db.delete('payments', where: 'id=?', whereArgs: [p['id']]);
+    }
+  }
+  return sample;
+}
+
 class Repository {
   final Directory root;
   final DatabaseFactory _factory;
@@ -43,7 +104,7 @@ class Repository {
   ) => factory.openDatabase(
     path,
     options: OpenDatabaseOptions(
-      version: 1,
+      version: schemaVersion,
       singleInstance: false,
       onConfigure: (db) async {
         try {
@@ -72,7 +133,10 @@ class Repository {
         );
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        throw StateError('Unsupported migration $oldVersion to $newVersion');
+        if (oldVersion < 2) {
+          // 1.1.5: drop sample rows that earlier versions could insert.
+          await db.transaction((tx) => purgeSampleData(tx));
+        }
       },
     ),
   );
@@ -475,6 +539,8 @@ class Repository {
               'value': jsonEncode(e.value),
             });
           }
+          // A backup made by an older version can carry sample rows.
+          await purgeSampleData(tx);
         }),
       );
     } catch (_) {
@@ -508,42 +574,5 @@ class Repository {
       }),
     );
     await cleanupFiles();
-  }
-
-  Future<void> demo() async {
-    if ((await records()).any((r) => r.flag('demo'))) return;
-    for (final fields in <Map<String, dynamic>>[
-      {
-        'title': 'Demo electricity bill',
-        'category': 'Bill',
-        'amount': 125000,
-        'repeat': 'monthly',
-        'due': dateText(day(DateTime.now()).add(const Duration(days: 3))),
-      },
-      {
-        'title': 'Demo warranty',
-        'category': 'Warranty',
-        'due': dateText(day(DateTime.now()).add(const Duration(days: 20))),
-      },
-    ]) {
-      await save(
-        AdminRecord({
-          ...fields,
-          'currency': 'INR',
-          'demo': true,
-          'status': 'active',
-          'reminders': [7, 3, 1, 0],
-        }),
-      );
-    }
-  }
-
-  Future<void> removeDemo() async {
-    for (final r in (await records()).where((r) => r.flag('demo'))) {
-      await delete(r.id!);
-      await withDatabase(
-        (db) => db.delete('payments', where: 'recordId=?', whereArgs: [r.id]),
-      );
-    }
   }
 }

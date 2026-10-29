@@ -39,19 +39,27 @@ void main() {
     await settle(tester, find.byKey(const Key('home-add-first')));
     expect(find.byKey(const Key('home-total')), findsOneWidget);
     expect(find.text('No bills yet · ₹0 a day'), findsOneWidget);
-    expect(find.byKey(const Key('home-welcome')), findsOneWidget);
     expect(find.text('Add your first bill'), findsOneWidget);
-    expect(find.text('Start here'), findsOneWidget);
     expect(find.text('No records match these filters'), findsNothing);
+    // No example bills, suggestions or placeholder amounts on a fresh install.
+    for (final fake in [
+      'Popular to add',
+      'Start here',
+      'Scan a bill',
+      'Track a free trial',
+      'Jio recharge',
+      'Netflix',
+      'Electricity',
+      'Car insurance',
+    ]) {
+      expect(find.text(fake), findsNothing, reason: fake);
+    }
+    expect(find.textContaining('Demo'), findsNothing);
+    expect(find.textContaining('Jio'), findsNothing);
+    expect(find.textContaining('₹799'), findsNothing);
     // A dark phone still gets the light sage look unless the user picks dark.
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.light);
-    await tester.scrollUntilVisible(
-      find.text('Popular to add'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Popular to add'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 500));
     await tester.runAsync(() async {
@@ -71,8 +79,7 @@ void main() {
       () => Repository.open(factory: databaseFactoryFfi, directory: dir!),
     );
     await tester.pumpWidget(LifeKeeper(repo: repo!, enforceLock: false));
-    await settle(tester, find.text('Next payments'));
-    expect(find.text('Next payments'), findsOneWidget);
+    await settle(tester, find.text('Add your first bill'));
     expect(find.byKey(const Key('home-total')), findsOneWidget);
     expect(find.byTooltip('Scan bill'), findsOneWidget);
     expect(find.byTooltip('Quick add'), findsOneWidget);
